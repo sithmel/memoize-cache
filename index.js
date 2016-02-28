@@ -18,23 +18,21 @@ function Cache(opts) {
 }
 
 Cache.prototype.push = function cache_push(args, output, next) {
-  if (!this._cache) return;
   var k = this._getCacheKey.apply(undefined, args);
   if (typeof k !== 'string') {
     k = JSON.stringify(k);
   }
-  if (k in this._cache) return;
+  if (k in this._cache) return next(undefined, k);
   this._cache[k] = output;
   this._cacheKeys.unshift({
     key: k,
     ts: Date.now()
   });
   this._purge();
-  next();
+  next(undefined, k);
 };
 
 Cache.prototype._purge = function cache__purge() {
-  if (!this._cache) return;
   // remove old entries
   var maxAge = this._maxAge;
   var maxLen = this._maxLen;
@@ -59,10 +57,8 @@ Cache.prototype._purge = function cache__purge() {
 };
 
 Cache.prototype.reset = function cache_reset(next) {
-  if (this._cache) {
-    this._cache = {}; // key, value
-    this._cacheKeys = []; // sorted by time {ts: xxx, key: xxx}
-  }
+  this._cache = {}; // key, value
+  this._cacheKeys = []; // sorted by time {ts: xxx, key: xxx}
   next();
 };
 
