@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Cache = require('..');
+var Cache = require('../ram-cache');
 
 describe('cache', function () {
 
