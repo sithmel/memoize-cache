@@ -4,7 +4,7 @@ A configurable cache support for memoized functions.
 
 A note about the API
 ====================
-This is an in-memory cache implementation. I have chosen a callback based asynchronous API. This is because ideally you can use the same API for implementing a in-file, network or DB based version of the same cache.
+This is an in-memory cache implementation. But the interface is designed to work with an external storage support (db, etc). The only 2 required public methods are: "push" and "query".
 
 Creating an instance
 --------------------
@@ -29,9 +29,7 @@ var cache = new Cache({key: function (config){
 Pushing a new cached value
 --------------------------
 ```js
-cache.push(args, output, function (){
-  // cache updated
-});
+cache.push(args, output);
 ```
 "args" is an array containing the arguments passed to the function that generated the output.
 
@@ -49,28 +47,20 @@ cache.query(args, function (err, result){
 resetting the cache
 -------------------
 ```js
-cache.reset(function (err){
-  // the cache is empty now
-});
+cache.reset();
 ```
 
 getting the number of item cached
 ---------------------------------
 ```js
-cache.len(function (err, n){
-  // n is the number of item cached
-});
+cache.len();
 ```
 
 getting the size of the cache
 -----------------------------
 ```js
-cache.size(true, function (err, size){
-  // size is an human readable size
-});
+cache.size(true);  // size is an human readable size
 
-cache.size(false, function (err, size){
-  // size is expressed in byte
-});
+cache.size(false); // size is expressed in byte
 ```
 If the first argument is true the output will be pretty printed.

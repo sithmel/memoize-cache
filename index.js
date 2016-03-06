@@ -17,25 +17,23 @@ function Cache(opts) {
   this._maxLen = opts.maxLen || Infinity;
 }
 
-Cache.prototype.push = function cache_push(args, output, next) {
+Cache.prototype.push = function cache_push(args, output) {
   var k = this._getCacheKey.apply(undefined, args);
   if (typeof k !== 'string') {
     k = JSON.stringify(k);
   }
-  if (k in this._cache) return next(undefined, k);
+  if (k in this._cache) return;
   this._cache[k] = output;
   this._cacheKeys.unshift({
     key: k,
     ts: Date.now()
   });
-  this._purge();
-  next(undefined, k);
+  this._purgeByLen();
 };
 
-Cache.prototype._purge = function cache__purge() {
+Cache.prototype._purgeByAge = function cache__purgeByAge() {
   // remove old entries
   var maxAge = this._maxAge;
-  var maxLen = this._maxLen;
   var cache = this._cache;
 
   var now = Date.now();
@@ -46,6 +44,12 @@ Cache.prototype._purge = function cache__purge() {
     }
     return true;
   });
+};
+
+Cache.prototype._purgeByLen = function cache__purgeByLen() {
+  // remove old entries
+  var maxLen = this._maxLen;
+  var cache = this._cache;
 
   // trim cache
   var keysToRemove = this._cacheKeys.slice(maxLen, Infinity);
@@ -56,10 +60,9 @@ Cache.prototype._purge = function cache__purge() {
   this._cacheKeys = this._cacheKeys.slice(0, maxLen);
 };
 
-Cache.prototype.reset = function cache_reset(next) {
+Cache.prototype.reset = function cache_reset() {
   this._cache = {}; // key, value
   this._cacheKeys = []; // sorted by time {ts: xxx, key: xxx}
-  next();
 };
 
 Cache.prototype.query = function cache_query(args, next) {
@@ -67,11 +70,11 @@ Cache.prototype.query = function cache_query(args, next) {
     cached = false,
     key;
   try {
+    this._purgeByAge(); // purge stale cache entries
     key = this._getCacheKey.apply(undefined, args);
     if (typeof key !== 'string') {
       key = JSON.stringify(key);
     }
-    this._purge(); // purge stale cache entries
 
     if (key in this._cache) {
       cached = true;
@@ -89,14 +92,12 @@ Cache.prototype.query = function cache_query(args, next) {
   });
 };
 
-Cache.prototype.size = function cache_size(pretty, next) {
-  var size = sizeof.sizeof(this._cache, pretty);
-  next(undefined, size);
+Cache.prototype.size = function cache_size(pretty) {
+  return sizeof.sizeof(this._cache, pretty);
 };
 
-Cache.prototype.len = function cache_len(next) {
-  var len = this._cacheKeys.length;
-  next(undefined, len);
+Cache.prototype.len = function cache_len() {
+  return this._cacheKeys.length;
 };
 
 module.exports = Cache;

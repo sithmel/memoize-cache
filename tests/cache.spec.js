@@ -3,37 +3,32 @@ var Cache = require('..');
 
 describe('cache', function () {
 
-  it('must configure cache: default key', function () {
+  it('must configure cache: default key', function (done) {
     var cache = new Cache();
-    cache.push([], 'result', function () {
-      cache.query({}, function (err, res) {
-        assert.equal(res.cached, true);
-        assert.equal(res.key, '_default');
-        assert.equal(res.hit, 'result');
-      });
+    cache.push([], 'result');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, true);
+      assert.equal(res.key, '_default');
+      assert.equal(res.hit, 'result');
+      done();
     });
   });
 
-  it('must return a size', function (done) {
+  it('must return a size', function () {
     var cache = new Cache();
-    cache.push([], 'result', function () {
-      cache.size(true, function (err, size) {
-        assert.equal(size, '28B');
-        done();
-      });
-    });
+    cache.push([], 'result');
+    assert.equal(cache.size(true), '28B');
   });
 
   describe('simple key', function () {
     var cache;
 
-    beforeEach(function (done) {
+    beforeEach(function () {
       cache = new Cache({key: function (data) {
         return data.test;
       }});
-      cache.push([{test: '1'}], 'result1', function () {
-        cache.push([{test: '2'}], 'result2', done);
-      });
+      cache.push([{test: '1'}], 'result1');
+      cache.push([{test: '2'}], 'result2');
     });
 
     it('must configure cache: string key 1', function (done) {
@@ -68,15 +63,14 @@ describe('cache', function () {
     var cache = new Cache({key: function (data) {
       return data.test;
     }});
-    cache.push([{test: [1, 2]}], 'result1', function () {
-      cache.push([{test: [3, 4]}], 'result2', function () {
-        cache.query([{test: [1, 2]}], function (err, res1) {
-          assert.equal(res1.cached, true);
-          assert.equal(res1.key, '[1,2]');
-          assert.equal(res1.hit, 'result1');
-          done();
-        });
-      });
+    cache.push([{test: [1, 2]}], 'result1');
+    cache.push([{test: [3, 4]}], 'result2');
+
+    cache.query([{test: [1, 2]}], function (err, res1) {
+      assert.equal(res1.cached, true);
+      assert.equal(res1.key, '[1,2]');
+      assert.equal(res1.hit, 'result1');
+      done();
     });
   });
 
@@ -84,13 +78,13 @@ describe('cache', function () {
     var cache = new Cache({key: function (data) {
       return data.test[0];
     }});
-    cache.push([{test: [1, 2]}], 'result1', function () {
-      cache.query([{test: [1, 'x']}], function (err, res1) {
-        assert.equal(res1.cached, true);
-        assert.equal(res1.key, '1');
-        assert.equal(res1.hit, 'result1');
-        done();
-      });
+    cache.push([{test: [1, 2]}], 'result1');
+
+    cache.query([{test: [1, 'x']}], function (err, res1) {
+      assert.equal(res1.cached, true);
+      assert.equal(res1.key, '1');
+      assert.equal(res1.hit, 'result1');
+      done();
     });
   });
 
@@ -98,13 +92,13 @@ describe('cache', function () {
     var cache = new Cache({key: function (data) {
       return data.test;
     }});
-    cache.push([{test: [1, 2]}], 'result1', function () {
-      cache.query([{test: [1, 2]}], function (err, res1) {
-        assert.equal(res1.cached, true);
-        assert.equal(res1.key, '[1,2]');
-        assert.equal(res1.hit, 'result1');
-        done();
-      });
+    cache.push([{test: [1, 2]}], 'result1');
+
+    cache.query([{test: [1, 2]}], function (err, res1) {
+      assert.equal(res1.cached, true);
+      assert.equal(res1.key, '[1,2]');
+      assert.equal(res1.hit, 'result1');
+      done();
     });
   });
 
@@ -112,35 +106,30 @@ describe('cache', function () {
     var cache = new Cache({key: function (config) {
       return config.test * 2;
     }});
-    cache.push([{test: 4}], 'result1', function () {
-      cache.query([{test: 4}], function (err, res1) {
-        assert.equal(res1.cached, true);
-        assert.equal(res1.key, '8');
-        assert.equal(res1.hit, 'result1');
-        done();
-      });
+    cache.push([{test: 4}], 'result1');
+
+    cache.query([{test: 4}], function (err, res1) {
+      assert.equal(res1.cached, true);
+      assert.equal(res1.key, '8');
+      assert.equal(res1.hit, 'result1');
+      done();
     });
   });
 
   describe('maxLen', function () {
     var cache;
 
-    beforeEach(function (done) {
+    beforeEach(function () {
       cache = new Cache({key: function (data) {
         return data.test;
       }, maxLen: 2});
-      cache.push([{test: 1}], 'result1', function () {
-        cache.push([{test: 2}], 'result2', function () {
-          cache.push([{test: 3}], 'result3', done);
-        });
-      });
+      cache.push([{test: 1}], 'result1');
+      cache.push([{test: 2}], 'result2');
+      cache.push([{test: 3}], 'result3');
     });
 
-    it('must be right size', function (done) {
-      cache.len(function (err, len) {
-        assert.equal(len, 2);
-        done();
-      });
+    it('must be right size', function () {
+      assert.equal(cache.len(), 2);
     });
 
     it('must not be cached (purged)', function (done) {
@@ -172,11 +161,11 @@ describe('cache', function () {
   describe('maxAge', function () {
     var cache;
 
-    beforeEach(function (done) {
+    beforeEach(function () {
       cache = new Cache({key: function (data) {
         return data.test;
       }, maxAge: 30});
-      cache.push([{test: 1}], 'result1', done);
+      cache.push([{test: 1}], 'result1');
     });
 
     it('must be cached', function (done) {
@@ -211,17 +200,13 @@ describe('cache', function () {
     });
   });
 
-  it('must reset/switch off cache', function (done) {
+  it('must reset/switch off cache', function () {
     var cache = new Cache({key: function (data) {
       return data.test;
     }});
-    cache.push([{test: 1}], 'result1', function () {
-      cache.reset(function () {
-        cache.len(function (err, len) {
-          assert.equal(len, 0);
-          done();
-        });
-      });
-    });
+    cache.push([{test: 1}], 'result1');
+
+    cache.reset();
+    assert.equal(cache.len(), 0);
   });
 });
