@@ -9,7 +9,6 @@ Cache object
 function find(arr, predicate) {
   var i,
     len = arr.length;
-
   for (i = 0; i < len; i++) {
     if (predicate(arr[i])) {
       return i;
@@ -21,7 +20,7 @@ function sortByLessPopular(a, b) {
   return a.times < b.times;
 }
 
-function removeByKey(key) {
+function byKey(key) {
   return function (item) {
     return item.key === key;
   };
@@ -57,20 +56,25 @@ Cache.prototype.push = function cache_push(args, output) {
     // remove from cache
     delete this._cache[lru.key];
     // remove from stale objects cache
-    oldestIndex = find(this._oldest, removeByKey(lru.key));
+    oldestIndex = find(this._oldest, byKey(lru.key));
     if (oldestIndex) {
       this._oldest.splice(oldestIndex, 1);
     }
   }
   // add to cache
   this._cache[k] = output;
-  // add to LRU heap
-  this._LRU.push({key: k, times: 0});
-  // add to stale objects cache
-  this._oldest.push({
-    key: k,
-    ts: Date.now()
-  });
+
+  if (this._maxLen !== Infinity) {
+    // add to LRU heap
+    this._LRU.push({key: k, times: 0});
+  }
+  if (this._maxAge !== Infinity) {
+    // add to stale objects cache
+    this._oldest.push({
+      key: k,
+      ts: Date.now()
+    });
+  }
 };
 
 Cache.prototype._purgeByAge = function cache__purgeByAge() {
@@ -78,6 +82,8 @@ Cache.prototype._purgeByAge = function cache__purgeByAge() {
   var key, i, oldestIndex,
     maxAge = this._maxAge,
     now = Date.now();
+
+  if (this._maxAge === Infinity) return;
 
   var oldestIndex = find(this._oldest, function (oldest) {
     return oldest.ts + maxAge >= now;
@@ -87,7 +93,7 @@ Cache.prototype._purgeByAge = function cache__purgeByAge() {
     for(i = 0; i < oldestIndex; i++){
       key = this._oldest[i].key;
       delete this._cache[key];
-      this._LRU.remove(removeByKey(key));
+      this._LRU.remove(byKey(key));
     }
     this._oldest.splice(0, i);
   }
@@ -112,9 +118,12 @@ Cache.prototype.query = function cache_query(args, next) {
     if (key in this._cache) {
       cached = true;
       hit = this._cache[key]; // cache hit!
-      lru = this._LRU.remove(removeByKey(key));
-      lru.times++;
-      this._LRU.push(lru);
+
+      if (this._maxLen !== Infinity) {
+        lru = this._LRU.remove(byKey(key));
+        lru.times++;
+        this._LRU.push(lru);
+      }
     }
   }
   catch (e) {
@@ -133,7 +142,7 @@ Cache.prototype.size = function cache_size(pretty) {
 };
 
 Cache.prototype.len = function cache_len() {
-  return this._LRU.size();
+  return Object.keys(this._cache).length;
 };
 
 module.exports = Cache;

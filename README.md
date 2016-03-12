@@ -1,13 +1,13 @@
 memoize-cache
 =============
-A configurable cache support for memoized functions. It is lightweight so it can run in the browser without any problem.
+A configurable cache support for functions (https://www.npmjs.com/package/async-deco). It contains 2 different implementations.
 
-A note about the API
-====================
-This is an in-memory cache implementation. But the interface is designed to work with an external storage support (db, etc). The only 2 required public methods are: "push" and "query".
+* ram-cache: is a lightweight yet complete implementation of an in-ram cache. Suitable for using it in the browser
+* cache: it uses a cache manager object to store data in memory/redis/mongodb/file system (https://www.npmjs.com/package/cache-manager)
 
-Creating an instance
---------------------
+
+ram-cache
+=========
 The constructor takes an option object with 3 optional attributes:
 * key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key.
 * maxAge: the maximum age of the item stored in the cache (in ms). Default: Infinity
@@ -27,6 +27,29 @@ var cache = new Cache({key: function (config){
   return config.id;
 }}, maxLen: 100, maxAge: 20000);
 ```
+
+cache
+=====
+The constructor takes an cache-manager object and an optional "key" function. The function will be used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key.
+
+Example:
+```js
+var
+var Cache = require('memoize-cache/cache'); // or require('memoize-cache').cache;
+var cacheManager = require('cache-manager'); // npm install cache-manager
+
+// using the id property of the first argument
+// this cache will store maximum 100 items
+// every item will be considered stale and purged after 20 seconds.
+var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 20});
+
+var cache = new Cache(memoryCache, function (config){
+  return config.id;
+});
+```
+
+Methods
+=======
 
 Pushing a new cached value
 --------------------------
@@ -48,18 +71,21 @@ cache.query(args, function (err, result){
 
 resetting the cache
 -------------------
+This is implemented only on ram-cache.
 ```js
 cache.reset();
 ```
 
 getting the number of item cached
 ---------------------------------
+This is implemented only on ram-cache.
 ```js
 cache.len();
 ```
 
 getting the size of the cache
 -----------------------------
+This is implemented only on ram-cache.
 ```js
 cache.size(true);  // size is an human readable size
 
