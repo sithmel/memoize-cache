@@ -1,6 +1,6 @@
 memoize-cache
 =============
-A configurable cache support for memoized functions.
+A configurable cache support for memoized functions. It is lightweight so it can run in the browser without any problem.
 
 A note about the API
 ====================
@@ -9,12 +9,14 @@ This is an in-memory cache implementation. But the interface is designed to work
 Creating an instance
 --------------------
 The constructor takes an option object with 3 optional attributes:
-* key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON. Default: a function returning a fixed key.
+* key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key.
 * maxAge: the maximum age of the item stored in the cache (in ms). Default: Infinity
-* maxLen: the maximum number of items stored in the cache. Default: Infinity
+* maxLen: the maximum number of items stored in the cache. Default: Infinity. Cache items will be purged using an LRU algorithm
 
 Example:
 ```js
+var Cache = require('memoize-cache/ram-cache'); // or require('memoize-cache').ramCache;
+
 // no values, uses always the same key for store any value
 var cache = new Cache();
 

@@ -28,6 +28,7 @@
     "npm-release": "^1.0.0"
   },
   "dependencies": {
+    "md5-o-matic": "^0.1.1",
     "sizeof": "^1.0.0"
   }
 }

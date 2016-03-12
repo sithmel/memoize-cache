@@ -1,84 +1,105 @@
 var sizeof = require('sizeof');
-
+var Heap = require('./heap');
+var md5omatic = require('md5-o-matic');
 /*
 
 Cache object
 
 */
 
+function sortByLessPopular(a, b) {
+  return a.times < b.times;
+}
+
+function sortByOldest(a, b) {
+  return a.ts < b.ts;
+}
+
+function removeByKey(key) {
+  return function (item) {
+    return item.key === key;
+  };
+}
+
 function Cache(opts) {
   opts = opts || {};
 
-  this._cache = {}; // key, value
-  this._cacheKeys = []; // sorted by time {ts: xxx, key: xxx} new ones first
+  this.reset();
 
   this._getCacheKey = opts.key || function () { return '_default'; };
   this._maxAge = opts.maxAge || Infinity;
   this._maxLen = opts.maxLen || Infinity;
 }
 
-Cache.prototype.push = function cache_push(args, output) {
+Cache.prototype.getCacheKey = function cache_getCacheKey(args) {
   var k = this._getCacheKey.apply(undefined, args);
   if (typeof k !== 'string') {
-    k = JSON.stringify(k);
+    k = md5omatic(JSON.stringify(k));
   }
+  return k;
+};
+
+Cache.prototype.push = function cache_push(args, output) {
+  var lru;
+  var k = this.getCacheKey(args);
   if (k in this._cache) return;
+
+  if(this._LRU.size() === this._maxLen) {
+    lru = this._LRU.pop();
+    delete this._cache[lru.key];
+    this._oldest.remove(removeByKey(lru.key));
+  }
+
   this._cache[k] = output;
-  this._cacheKeys.unshift({
+
+  this._LRU.push({key: k, times: 0});
+
+  this._oldest.push({
     key: k,
     ts: Date.now()
   });
-  this._purgeByLen();
 };
 
 Cache.prototype._purgeByAge = function cache__purgeByAge() {
   // remove old entries
-  var maxAge = this._maxAge;
-  var cache = this._cache;
-
+  var oldest;
   var now = Date.now();
-  this._cacheKeys = this._cacheKeys.filter(function (item) {
-    if (item.ts + maxAge < now ) {
-      delete cache[item.key];
-      return false;
+
+  while (this._oldest.size()) {
+    oldest = this._oldest.pop();
+    if (oldest.ts + this._maxAge < now) {
+      delete this._cache[oldest.key];
+      this._LRU.remove(removeByKey(oldest.key));
     }
-    return true;
-  });
-};
-
-Cache.prototype._purgeByLen = function cache__purgeByLen() {
-  // remove old entries
-  var maxLen = this._maxLen;
-  var cache = this._cache;
-
-  // trim cache
-  var keysToRemove = this._cacheKeys.slice(maxLen, Infinity);
-  keysToRemove.forEach(function (item) {
-    var k = item.key;
-    delete cache[k];
-  });
-  this._cacheKeys = this._cacheKeys.slice(0, maxLen);
+    else {
+      this._oldest.push(oldest);
+      break;
+    }
+  }
 };
 
 Cache.prototype.reset = function cache_reset() {
   this._cache = {}; // key, value
-  this._cacheKeys = []; // sorted by time {ts: xxx, key: xxx}
+  this._LRU = new Heap(sortByLessPopular);
+  this._oldest = new Heap(sortByOldest);
 };
 
 Cache.prototype.query = function cache_query(args, next) {
   var hit,
     cached = false,
+    lru,
     key;
   try {
     this._purgeByAge(); // purge stale cache entries
-    key = this._getCacheKey.apply(undefined, args);
-    if (typeof key !== 'string') {
-      key = JSON.stringify(key);
-    }
+
+    key = this.getCacheKey(args);
 
     if (key in this._cache) {
       cached = true;
       hit = this._cache[key]; // cache hit!
+      lru = this._LRU.remove(removeByKey(key));
+      lru.times++;
+      this._LRU.push(lru);
     }
   }
   catch (e) {
@@ -97,7 +118,7 @@ Cache.prototype.size = function cache_size(pretty) {
 };
 
 Cache.prototype.len = function cache_len() {
-  return this._cacheKeys.length;
+  return this._LRU.size();
 };
 
 module.exports = Cache;
