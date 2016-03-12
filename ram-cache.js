@@ -6,13 +6,19 @@ var md5omatic = require('md5-o-matic');
 Cache object
 
 */
+function find(arr, predicate) {
+  var i,
+    len = arr.length;
+
+  for (i = 0; i < len; i++) {
+    if (predicate(arr[i])) {
+      return i;
+    }
+  }
+}
 
 function sortByLessPopular(a, b) {
   return a.times < b.times;
-}
-
-function sortByOldest(a, b) {
-  return a.ts < b.ts;
 }
 
 function removeByKey(key) {
@@ -40,20 +46,27 @@ Cache.prototype.getCacheKey = function cache_getCacheKey(args) {
 };
 
 Cache.prototype.push = function cache_push(args, output) {
-  var lru;
-  var k = this.getCacheKey(args);
+  var lru, oldestIndex,
+    k = this.getCacheKey(args);
+
   if (k in this._cache) return;
 
   if(this._LRU.size() === this._maxLen) {
+    // remove from LRU heap
     lru = this._LRU.pop();
+    // remove from cache
     delete this._cache[lru.key];
-    this._oldest.remove(removeByKey(lru.key));
+    // remove from stale objects cache
+    oldestIndex = find(this._oldest, removeByKey(lru.key));
+    if (oldestIndex) {
+      this._oldest.splice(oldestIndex, 1);
+    }
   }
-
+  // add to cache
   this._cache[k] = output;
-
+  // add to LRU heap
   this._LRU.push({key: k, times: 0});
-
+  // add to stale objects cache
   this._oldest.push({
     key: k,
     ts: Date.now()
@@ -62,26 +75,28 @@ Cache.prototype.push = function cache_push(args, output) {
 
 Cache.prototype._purgeByAge = function cache__purgeByAge() {
   // remove old entries
-  var oldest;
-  var now = Date.now();
+  var key, i, oldestIndex,
+    maxAge = this._maxAge,
+    now = Date.now();
 
-  while (this._oldest.size()) {
-    oldest = this._oldest.pop();
-    if (oldest.ts + this._maxAge < now) {
-      delete this._cache[oldest.key];
-      this._LRU.remove(removeByKey(oldest.key));
+  var oldestIndex = find(this._oldest, function (oldest) {
+    return oldest.ts + maxAge >= now;
+  });
+
+  if (oldestIndex) {
+    for(i = 0; i < oldestIndex; i++){
+      key = this._oldest[i].key;
+      delete this._cache[key];
+      this._LRU.remove(removeByKey(key));
     }
-    else {
-      this._oldest.push(oldest);
-      break;
-    }
+    this._oldest.splice(0, i);
   }
 };
 
 Cache.prototype.reset = function cache_reset() {
   this._cache = {}; // key, value
   this._LRU = new Heap(sortByLessPopular);
-  this._oldest = new Heap(sortByOldest);
+  this._oldest = [];
 };
 
 Cache.prototype.query = function cache_query(args, next) {
