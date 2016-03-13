@@ -11,7 +11,7 @@ function Cache(cacheManager, key) {
   this.cacheManager = cacheManager;
   Promise.promisifyAll(this.cacheManager);
   this._getCacheKey = key || function () { return '_default'; };
-  this._taskToComplete = [];
+  this._tasksToComplete = [];
 }
 
 Cache.prototype.getCacheKey = function cache_getCacheKey(args) {
@@ -25,16 +25,18 @@ Cache.prototype.getCacheKey = function cache_getCacheKey(args) {
 Cache.prototype.push = function cache_push(args, output) {
   var k = this.getCacheKey(args);
   var task = this.cacheManager.setAsync(k, output);
-  this._taskToComplete.push(task);
+  this._tasksToComplete.push(task);
 };
 
 Cache.prototype.query = function cache_query(args, next) {
   var key = this.getCacheKey(args);
   var that = this;
 
-  Promise.all(this._taskToComplete)
+  var tasksToComplete = this._tasksToComplete;
+  this._tasksToComplete = [];
+
+  Promise.all(tasksToComplete)
   .then(function () {
-    that._taskToComplete = [];
     return that.cacheManager.getAsync(key);
   })
   .then(function (res) {

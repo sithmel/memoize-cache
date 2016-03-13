@@ -1,5 +1,7 @@
 memoize-cache
 =============
+[![Build Status](https://travis-ci.org/sithmel/memoize-cache.svg?branch=master)](https://travis-ci.org/sithmel/memoize-cache)
+
 A configurable cache support for functions (https://www.npmjs.com/package/async-deco). It contains 2 different implementations.
 
 * ram-cache: is a lightweight yet complete implementation of an in-ram cache. Suitable for using it in the browser
