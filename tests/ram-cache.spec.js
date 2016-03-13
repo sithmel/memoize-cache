@@ -5,9 +5,9 @@ describe('cache', function () {
 
   it('must translate args to key', function () {
     var cache = new Cache({key: function (n) {return n;}});
-    assert.equal(cache.getCacheKey(['1']), '1');
-    assert.equal(cache.getCacheKey([1]), 'c4ca4238a0b923820dcc509a6f75849b');
-    assert.equal(cache.getCacheKey([{d:1}]), 'dc6f789c90af7a7f8156af120f33e3be');
+    assert.equal(cache.getCacheKey('1'), '1');
+    assert.equal(cache.getCacheKey(1), 'c4ca4238a0b923820dcc509a6f75849b');
+    assert.equal(cache.getCacheKey({d:1}), 'dc6f789c90af7a7f8156af120f33e3be');
   });
 
   it('must configure cache: default key', function (done) {

@@ -71,6 +71,14 @@ cache.query(args, function (err, result){
 ```
 "args" is an array containing the arguments passed to the function that generated the output.
 
+Getting the cache key
+---------------------
+```js
+var key = cache.getCacheKey(...);
+```
+It takes as arguments the same arguments of the function. It returns the cache key.
+It uses the function passed in the factory function. If it returns a string it uses it as key. In case it is not a string it tries to serialize it to JSON and then to an hash (using md5).
+
 resetting the cache
 -------------------
 This is implemented only on ram-cache.
@@ -94,3 +102,12 @@ cache.size(true);  // size is an human readable size
 cache.size(false); // size is expressed in byte
 ```
 If the first argument is true the output will be pretty printed.
+
+key-getter
+==========
+This is a utility function used to generate a function that returns a key.
+```js
+var keyGetter = require('memoize-cache/key-getter')
+var getKey = keyGetter(func);
+```
+It takes a function as argument (returning a key). But it takes care of checking if it is a valid key and to hash it.

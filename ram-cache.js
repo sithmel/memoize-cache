@@ -1,6 +1,7 @@
 var sizeof = require('sizeof');
 var Heap = require('./heap');
-var md5omatic = require('md5-o-matic');
+var keyGetter = require('./key-getter');
+
 /*
 
 Cache object
@@ -31,22 +32,14 @@ function Cache(opts) {
 
   this.reset();
 
-  this._getCacheKey = opts.key || function () { return '_default'; };
+  this.getCacheKey = keyGetter(opts.key);
   this._maxAge = opts.maxAge || Infinity;
   this._maxLen = opts.maxLen || Infinity;
 }
 
-Cache.prototype.getCacheKey = function cache_getCacheKey(args) {
-  var k = this._getCacheKey.apply(undefined, args);
-  if (typeof k !== 'string') {
-    k = md5omatic(JSON.stringify(k));
-  }
-  return k;
-};
-
 Cache.prototype.push = function cache_push(args, output) {
   var lru, oldestIndex,
-    k = this.getCacheKey(args);
+    k = this.getCacheKey.apply(this, args);
 
   if (k in this._cache) return;
 
@@ -113,7 +106,7 @@ Cache.prototype.query = function cache_query(args, next) {
   try {
     this._purgeByAge(); // purge stale cache entries
 
-    key = this.getCacheKey(args);
+    key = this.getCacheKey.apply(this, args);
 
     if (key in this._cache) {
       cached = true;

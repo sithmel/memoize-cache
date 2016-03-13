@@ -1,5 +1,5 @@
-var md5omatic = require('md5-o-matic');
 var Promise = require('bluebird');
+var keyGetter = require('./key-getter');
 
 /*
 
@@ -10,26 +10,18 @@ Cache object
 function Cache(cacheManager, key) {
   this.cacheManager = cacheManager;
   Promise.promisifyAll(this.cacheManager);
-  this._getCacheKey = key || function () { return '_default'; };
+  this.getCacheKey = keyGetter(key);
   this._tasksToComplete = [];
 }
 
-Cache.prototype.getCacheKey = function cache_getCacheKey(args) {
-  var k = this._getCacheKey.apply(undefined, args);
-  if (typeof k !== 'string') {
-    k = md5omatic(JSON.stringify(k));
-  }
-  return k;
-};
-
 Cache.prototype.push = function cache_push(args, output) {
-  var k = this.getCacheKey(args);
+  var k = this.getCacheKey.apply(this, args);
   var task = this.cacheManager.setAsync(k, output);
   this._tasksToComplete.push(task);
 };
 
 Cache.prototype.query = function cache_query(args, next) {
-  var key = this.getCacheKey(args);
+  var key = this.getCacheKey.apply(this, args);
   var that = this;
 
   var tasksToComplete = this._tasksToComplete;

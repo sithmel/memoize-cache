@@ -1,0 +1,20 @@
+var md5omatic = require('md5-o-matic');
+
+module.exports = function (func) {
+  func = func || function () { return '_default'; };
+  return function () {
+    var args = Array.prototype.slice.call(arguments);
+    var k = func.apply(undefined, args);
+    if (typeof k === 'undefined' ||
+      (typeof k === 'number' && isNaN(k)) ||
+      k === null ||
+      k === '' ||
+      (typeof k === 'object' && Object.keys(k).length === 0)) {
+      throw new Error('Not a valid key');
+    }
+    if (typeof k !== 'string') {
+      k = md5omatic(JSON.stringify(k));
+    }
+    return k;
+  }
+}
