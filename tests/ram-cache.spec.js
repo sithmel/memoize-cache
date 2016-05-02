@@ -229,6 +229,54 @@ describe('cache', function () {
     });
   });
 
+  describe('maxAge (function)', function () {
+    var cache;
+
+    beforeEach(function () {
+      cache = new Cache({
+        key: function (data) {
+          return data.test;
+        },
+        maxAge: function (data) {
+          return data.test === '1' ? 0 : 50;
+        }});
+      cache.push([{test: '1'}], 'result1');
+    });
+
+    it('must not be cached', function (done) {
+      cache.query([{test: '1'}], function (err, res1) {
+        assert.equal(res1.cached, false);
+        assert.equal(res1.key, '1');
+        assert.isUndefined(res1.hit);
+        done();
+      });
+    });
+
+    it('must be not expired', function (done) {
+      cache.push([{test: '2'}], 'result2');
+      setTimeout(function () {
+        cache.query([{test: '2'}], function (err, res1) {
+          assert.equal(res1.cached, true);
+          assert.equal(res1.key, '2');
+          assert.equal(res1.hit, 'result2');
+          done();
+        });
+      }, 40);
+    });
+
+    it('must be expired after a while', function (done) {
+      cache.push([{test: '2'}], 'result2');
+      setTimeout(function () {
+        cache.query([{test: '2'}], function (err, res1) {
+          assert.equal(res1.cached, false);
+          assert.equal(res1.key, '2');
+          assert.isUndefined(res1.hit);
+          done();
+        });
+      }, 60);
+    });
+  });
+
   it('must reset/switch off cache', function () {
     var cache = new Cache({key: function (data) {
       return data.test;

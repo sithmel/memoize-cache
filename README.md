@@ -12,8 +12,8 @@ ram-cache
 =========
 The constructor takes an option object with 3 optional attributes:
 * key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key.
-* maxAge: the maximum age of the item stored in the cache (in ms). Default: Infinity
 * maxLen: the maximum number of items stored in the cache. Default: Infinity. Cache items will be purged using an LRU algorithm
+* maxAge: the maximum age of the item stored in the cache (in ms). Default: Infinity. You can also pass a function that will calculate the ttl of a specific item (0 will mean no cache).
 
 Example:
 ```js
@@ -36,7 +36,6 @@ The constructor takes an cache-manager object and an optional "key" function. Th
 
 Example:
 ```js
-var
 var Cache = require('memoize-cache/cache'); // or require('memoize-cache').cache;
 var cacheManager = require('cache-manager'); // npm install cache-manager
 
@@ -49,6 +48,8 @@ var cache = new Cache(memoryCache, function (config){
   return config.id;
 });
 ```
+The "Cache" constructor takes optionally a second argument "getMaxAge". It allows to use a different TTL for a specific item. It can be a function taking the same arguments of the "getKey" and returning the TTL in seconds (YES, THESE ARE SECONDS INSTEAD OF MILLISECONDS!!!). Infinity means: forever, 0 means: don't cache.
+
 
 Methods
 =======

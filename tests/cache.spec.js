@@ -220,4 +220,53 @@ describe('cache-manager', function () {
       }, 40);
     });
   });
+
+  describe('maxAge (function)', function () {
+    var cache;
+
+    beforeEach(function () {
+      var memoryCache = cacheManager.caching({store: 'memory', max: 20, ttl: 0.030});
+      cache = new Cache(memoryCache, function (data) {
+        return data.test;
+      },
+      function (data) {
+        return data.test === '1' ? 0 : 0.050;
+      });
+
+      cache.push([{test: '1'}], 'result1');
+    });
+
+    it('must not be cached', function (done) {
+      cache.query([{test: '1'}], function (err, res1) {
+        assert.equal(res1.cached, false);
+        assert.equal(res1.key, '1');
+        assert.isUndefined(res1.hit);
+        done();
+      });
+    });
+
+    it('must be not expired', function (done) {
+      cache.push([{test: '2'}], 'result2');
+      setTimeout(function () {
+        cache.query([{test: '2'}], function (err, res1) {
+          assert.equal(res1.cached, true);
+          assert.equal(res1.key, '2');
+          assert.equal(res1.hit, 'result2');
+          done();
+        });
+      }, 40);
+    });
+
+    it('must be expired after a while', function (done) {
+      cache.push([{test: '2'}], 'result2');
+      setTimeout(function () {
+        cache.query([{test: '2'}], function (err, res1) {
+          assert.equal(res1.cached, false);
+          assert.equal(res1.key, '2');
+          assert.isUndefined(res1.hit);
+          done();
+        });
+      }, 60);
+    });
+  });
 });

@@ -7,18 +7,12 @@ var keyGetter = require('./key-getter');
 Cache object
 
 */
-function find(arr, predicate) {
-  var i,
-    len = arr.length;
-  for (i = 0; i < len; i++) {
-    if (predicate(arr[i])) {
-      return i;
-    }
-  }
-}
-
 function sortByLessPopular(a, b) {
   return a.times < b.times;
+}
+
+function sortByOldest(a, b) {
+  return a.expireTs < b.expireTs;
 }
 
 function byKey(key) {
@@ -33,14 +27,19 @@ function Cache(opts) {
   this.reset();
 
   this.getCacheKey = keyGetter(opts.key);
-  this._maxAge = opts.maxAge || Infinity;
+  this._maxAge = typeof opts.maxAge === 'undefined' ?
+    function () {return Infinity;} :
+    (typeof opts.maxAge === 'function' ? opts.maxAge : function () {return opts.maxAge;});
+
   this._maxLen = opts.maxLen || Infinity;
 }
 
 Cache.prototype.push = function cache_push(args, output) {
   var lru, oldestIndex,
-    k = this.getCacheKey.apply(this, args);
+    k = this.getCacheKey.apply(this, args),
+    maxAge = this._maxAge.apply(this, args);
 
+  if (maxAge === 0) return;
   if (k in this._cache) return;
 
   if(this._LRU.size() === this._maxLen) {
@@ -49,10 +48,7 @@ Cache.prototype.push = function cache_push(args, output) {
     // remove from cache
     delete this._cache[lru.key];
     // remove from stale objects cache
-    oldestIndex = find(this._oldest, byKey(lru.key));
-    if (oldestIndex) {
-      this._oldest.splice(oldestIndex, 1);
-    }
+    this._oldest.remove(byKey(lru.key));
   }
   // add to cache
   this._cache[k] = output;
@@ -61,11 +57,11 @@ Cache.prototype.push = function cache_push(args, output) {
     // add to LRU heap
     this._LRU.push({key: k, times: 0});
   }
-  if (this._maxAge !== Infinity) {
+  if (maxAge !== Infinity) {
     // add to stale objects cache
     this._oldest.push({
       key: k,
-      ts: Date.now()
+      expireTs: Date.now() + maxAge
     });
   }
 };
@@ -73,29 +69,25 @@ Cache.prototype.push = function cache_push(args, output) {
 Cache.prototype._purgeByAge = function cache__purgeByAge() {
   // remove old entries
   var key, i, oldestIndex,
-    maxAge = this._maxAge,
     now = Date.now();
 
-  if (this._maxAge === Infinity) return;
-
-  var oldestIndex = find(this._oldest, function (oldest) {
-    return oldest.ts + maxAge >= now;
-  });
-
-  if (oldestIndex) {
-    for(i = 0; i < oldestIndex; i++){
-      key = this._oldest[i].key;
-      delete this._cache[key];
-      this._LRU.remove(byKey(key));
+  while (this._oldest.size()) {
+    oldest = this._oldest.pop();
+    if (oldest.expireTs < now) {
+      delete this._cache[oldest.key];
+      this._LRU.remove(byKey(oldest.key));
     }
-    this._oldest.splice(0, i);
+    else {
+      this._oldest.push(oldest);
+      break;
+    }
   }
 };
 
 Cache.prototype.reset = function cache_reset() {
   this._cache = {}; // key, value
   this._LRU = new Heap(sortByLessPopular);
-  this._oldest = [];
+  this._oldest = new Heap(sortByOldest);
 };
 
 Cache.prototype.query = function cache_query(args, next) {
