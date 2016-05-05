@@ -11,7 +11,7 @@ A configurable cache support for functions (https://www.npmjs.com/package/async-
 ram-cache
 =========
 The constructor takes an option object with 3 optional attributes:
-* key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key.
+* key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key. The value won't be cached if the function returns null
 * maxLen: the maximum number of items stored in the cache. Default: Infinity. Cache items will be purged using an LRU algorithm
 * maxAge: the maximum age of the item stored in the cache (in ms). Default: Infinity. You can also pass a function that will calculate the ttl of a specific item (0 will mean no cache).
 
@@ -32,8 +32,11 @@ var cache = new Cache({key: function (config){
 
 cache
 =====
-The constructor takes an cache-manager object and an optional "key" function. The function will be used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key.
+The constructor takes an cache-manager object, an optional "key" function, and an optional "getMaxAge" function. 
 
+The "key" function will be used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key.  The value won't be cached if the function returns null.
+
+"getMaxAge" allows you to use a different TTL for a specific item. It must be a function taking the same arguments as the "key" function and returning the TTL in seconds (YES, THESE ARE SECONDS INSTEAD OF MILLISECONDS!!!). Infinity means: forever, 0 means: don't cache.
 Example:
 ```js
 var Cache = require('memoize-cache/cache'); // or require('memoize-cache').cache;
@@ -48,8 +51,6 @@ var cache = new Cache(memoryCache, function (config){
   return config.id;
 });
 ```
-The "Cache" constructor takes optionally a second argument "getMaxAge". It allows to use a different TTL for a specific item. It can be a function taking the same arguments of the "getKey" and returning the TTL in seconds (YES, THESE ARE SECONDS INSTEAD OF MILLISECONDS!!!). Infinity means: forever, 0 means: don't cache.
-
 
 Methods
 =======

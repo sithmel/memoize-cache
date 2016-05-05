@@ -10,6 +10,11 @@ describe('cache', function () {
     assert.equal(cache.getCacheKey({d:1}), 'dc6f789c90af7a7f8156af120f33e3be');
   });
 
+  it('must return null key', function () {
+    var cache = new Cache({key: function (n) {return null;}});
+    assert.equal(cache.getCacheKey('1'), null);
+  });
+
   it('must configure cache: default key', function (done) {
     var cache = new Cache();
     cache.push([], 'result');
@@ -17,6 +22,17 @@ describe('cache', function () {
       assert.equal(res.cached, true);
       assert.equal(res.key, '_default');
       assert.equal(res.hit, 'result');
+      done();
+    });
+  });
+
+  it('must not cache if key is null', function (done) {
+    var cache = new Cache({key: function (n) {return null;}});
+    cache.push([], 'result');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, false);
+      assert.equal(res.key, null);
+      assert.isUndefined(res.hit);
       done();
     });
   });

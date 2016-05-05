@@ -24,6 +24,24 @@ describe('cache-manager', function () {
     });
   });
 
+  it('must return null key', function () {
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+    var cache = new Cache(memoryCache, function (n) {return null;});
+    assert.equal(cache.getCacheKey('1'), null);
+  });
+
+  it('must not cache if key is null', function (done) {
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+    var cache = new Cache(memoryCache, function (n) {return null;});
+    cache.push([], 'result');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, false);
+      assert.equal(res.key, null);
+      assert.isUndefined(res.hit);
+      done();
+    });
+  });
+
   describe('simple key', function () {
     var cache;
 

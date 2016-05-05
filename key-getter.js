@@ -5,9 +5,11 @@ module.exports = function (func) {
   return function () {
     var args = Array.prototype.slice.call(arguments);
     var k = func.apply(undefined, args);
+    if (k === null) {
+      return null;
+    }
     if (typeof k === 'undefined' ||
       (typeof k === 'number' && isNaN(k)) ||
-      k === null ||
       k === '' ||
       (typeof k === 'object' && Object.keys(k).length === 0)) {
       throw new Error('Not a valid key');

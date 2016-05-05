@@ -23,4 +23,7 @@ describe('key-getter', function () {
     assert.throws(getKey, 'Not a valid key');
   });
 
+  it('must translate null to null', function () {
+    assert.equal(getKey(null), null);
+  });
 });

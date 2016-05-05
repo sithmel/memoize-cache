@@ -35,9 +35,11 @@ function Cache(opts) {
 }
 
 Cache.prototype.push = function cache_push(args, output) {
-  var lru, oldestIndex,
+  var lru,
     k = this.getCacheKey.apply(this, args),
     maxAge = this._maxAge.apply(this, args);
+
+  if (k === null) return; // if k is null I don't cache
 
   if (maxAge === 0) return;
   if (k in this._cache) return;
@@ -68,8 +70,7 @@ Cache.prototype.push = function cache_push(args, output) {
 
 Cache.prototype._purgeByAge = function cache__purgeByAge() {
   // remove old entries
-  var key, i, oldestIndex,
-    now = Date.now();
+  var oldest, now = Date.now();
 
   while (this._oldest.size()) {
     oldest = this._oldest.pop();
@@ -99,6 +100,14 @@ Cache.prototype.query = function cache_query(args, next) {
     this._purgeByAge(); // purge stale cache entries
 
     key = this.getCacheKey.apply(this, args);
+
+    if (key === null) {
+      // if k is null I don't cache      
+      return next(undefined, {
+        cached: cached,
+        key: key
+      });
+    } 
 
     if (key in this._cache) {
       cached = true;

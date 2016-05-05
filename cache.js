@@ -20,6 +20,8 @@ Cache.prototype.push = function cache_push(args, output) {
   var k = this.getCacheKey.apply(this, args);
   var maxAge = this._getMaxAge ? this._getMaxAge.apply(this, args) : undefined;
 
+  if (k === null) return;
+
   if (maxAge === 0) {
     return;
   }
@@ -31,6 +33,14 @@ Cache.prototype.push = function cache_push(args, output) {
 Cache.prototype.query = function cache_query(args, next) {
   var key = this.getCacheKey.apply(this, args);
   var that = this;
+
+  if (key === null) {
+    // if k is null I don't cache      
+    return next(null, {
+      cached: false,
+      key: key
+    });
+  }
 
   var tasksToComplete = this._tasksToComplete;
   this._tasksToComplete = [];
