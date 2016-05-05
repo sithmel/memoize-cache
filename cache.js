@@ -18,7 +18,7 @@ function Cache(cacheManager, key, getMaxAge) {
 
 Cache.prototype.push = function cache_push(args, output) {
   var k = this.getCacheKey.apply(this, args);
-  var maxAge = this._getMaxAge ? this._getMaxAge.apply(this, args) : undefined;
+  var maxAge = this._getMaxAge ? this._getMaxAge.call(this, args, output) : undefined;
 
   if (k === null) return;
 

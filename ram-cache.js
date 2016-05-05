@@ -37,11 +37,11 @@ function Cache(opts) {
 Cache.prototype.push = function cache_push(args, output) {
   var lru,
     k = this.getCacheKey.apply(this, args),
-    maxAge = this._maxAge.apply(this, args);
+    maxAge = this._maxAge.call(this, args, output);
 
   if (k === null) return; // if k is null I don't cache
 
-  if (maxAge === 0) return;
+  if (!maxAge) return;
   if (k in this._cache) return;
 
   if(this._LRU.size() === this._maxLen) {

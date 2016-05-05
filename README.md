@@ -13,7 +13,7 @@ ram-cache
 The constructor takes an option object with 3 optional attributes:
 * key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key. The value won't be cached if the function returns null
 * maxLen: the maximum number of items stored in the cache. Default: Infinity. Cache items will be purged using an LRU algorithm
-* maxAge: the maximum age of the item stored in the cache (in ms). Default: Infinity. You can also pass a function that will calculate the ttl of a specific item (0 will mean no cache).
+* maxAge: the maximum age of the item stored in the cache (in ms). Default: Infinity. You can also pass a function that will calculate the ttl of a specific item (0 will mean no cache). The function will take the same arguments as the "push" method (an array of inputs and the output).
 
 Example:
 ```js
@@ -36,7 +36,8 @@ The constructor takes an cache-manager object, an optional "key" function, and a
 
 The "key" function will be used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key.  The value won't be cached if the function returns null.
 
-"getMaxAge" allows you to use a different TTL for a specific item. It must be a function taking the same arguments as the "key" function and returning the TTL in seconds (YES, THESE ARE SECONDS INSTEAD OF MILLISECONDS!!!). Infinity means: forever, 0 means: don't cache.
+"getMaxAge" allows you to use a different TTL for a specific item. It must be a function and it takes the same arguments as the "push" method (an array of inputs and the output). It returns the TTL in seconds (YES, THESE ARE SECONDS INSTEAD OF MILLISECONDS!!!). Infinity means: forever, 0 means: don't cache.
+If it returns undefined, the default ttl will be used.
 Example:
 ```js
 var Cache = require('memoize-cache/cache'); // or require('memoize-cache').cache;

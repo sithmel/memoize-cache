@@ -37,6 +37,28 @@ describe('cache', function () {
     });
   });
 
+  it('must not cache with specific output', function (done) {
+    var cache = new Cache({
+      key: function (n) {
+        return n;
+      },
+      maxAge: function (args, output) {
+        if (output === 'result') {
+          return 0;
+        }
+        return Infinity;
+      }
+    });
+
+    cache.push(['1'], 'result');
+    cache.query(['1'], function (err, res) {
+      assert.equal(res.cached, false);
+      assert.equal(res.key, '1');
+      assert.isUndefined(res.hit);
+      done();
+    });
+  });
+
   it('must return a size', function () {
     var cache = new Cache();
     cache.push([], 'result');
@@ -253,7 +275,8 @@ describe('cache', function () {
         key: function (data) {
           return data.test;
         },
-        maxAge: function (data) {
+        maxAge: function (args, output) {
+          var data = args[0];
           return data.test === '1' ? 0 : 50;
         }});
       cache.push([{test: '1'}], 'result1');
