@@ -14,8 +14,11 @@ Cache.prototype.push = function cache_push(args, output) {};
 
 Cache.prototype.query = function cache_query(args, next) {
   var key = this.getCacheKey.apply(this, args);
+  if (key === '__error__') {
+    return next(new Error('Error test'));
+  }
 
-  return next(undefined, {
+  return next(null, {
     cached: false,
     key: key
   });

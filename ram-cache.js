@@ -103,7 +103,7 @@ Cache.prototype.query = function cache_query(args, next) {
 
     if (key === null) {
       // if k is null I don't cache      
-      return next(undefined, {
+      return next(null, {
         cached: cached,
         key: key
       });
@@ -124,7 +124,7 @@ Cache.prototype.query = function cache_query(args, next) {
     return next(e);
   }
 
-  next(undefined, {
+  next(null, {
     cached: cached,
     key: key,
     hit: hit
