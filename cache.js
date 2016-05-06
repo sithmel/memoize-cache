@@ -7,11 +7,16 @@ Cache object
 
 */
 
-function Cache(cacheManager, key, getMaxAge) {
+function Cache(cacheManager, opts) {
+  opts = opts || {};
   this.cacheManager = cacheManager;
   Promise.promisifyAll(this.cacheManager);
-  this.getCacheKey = keyGetter(key);
-  this._getMaxAge = getMaxAge;
+  this.getCacheKey = keyGetter(opts.key);
+  this._getMaxAge = opts.maxAge;
+
+  this._maxValidity = typeof opts.maxValidity === 'undefined' ?
+    function () {return Infinity;} :
+    (typeof opts.maxValidity === 'function' ? opts.maxValidity : function () {return opts.maxValidity;});
 
   this._tasksToComplete = [];
 }
@@ -19,6 +24,7 @@ function Cache(cacheManager, key, getMaxAge) {
 Cache.prototype.push = function cache_push(args, output) {
   var k = this.getCacheKey.apply(this, args);
   var maxAge = this._getMaxAge ? this._getMaxAge.call(this, args, output) : undefined;
+  var maxValidity = (this._maxValidity.call(this, args, output) * 1000) + Date.now();
 
   if (k === null) return;
 
@@ -26,7 +32,8 @@ Cache.prototype.push = function cache_push(args, output) {
     return;
   }
 
-  var task = this.cacheManager.setAsync(k, output, maxAge ? {ttl: maxAge} : undefined);
+  var data = { data: output, maxValidity: maxValidity };
+  var task = this.cacheManager.setAsync(k, data, maxAge ? {ttl: maxAge} : undefined);
   this._tasksToComplete.push(task);
 };
 
@@ -54,7 +61,8 @@ Cache.prototype.query = function cache_query(args, next) {
       next(null, {
         cached: true,
         key: key,
-        hit: res
+        hit: res.data,
+        stale: Boolean(res.maxValidity && res.maxValidity < Date.now())
       });
     }
     else {

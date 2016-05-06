@@ -6,7 +6,7 @@ describe('cache-manager', function () {
 
   it('must translate args to key', function () {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
-    var cache = new Cache(memoryCache, function (n) {return n;});
+    var cache = new Cache(memoryCache, {key: function (n) {return n;}});
     assert.equal(cache.getCacheKey('1'), '1');
     assert.equal(cache.getCacheKey(1), 'c4ca4238a0b923820dcc509a6f75849b');
     assert.equal(cache.getCacheKey({d:1}), 'dc6f789c90af7a7f8156af120f33e3be');
@@ -24,15 +24,65 @@ describe('cache-manager', function () {
     });
   });
 
+  describe('maxValidity', function () {
+    var memoryCache;
+    beforeEach(function () {
+      memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});      
+    });
+
+    it('must use value', function (done) {
+      var cache = new Cache(memoryCache, {maxValidity: 0.010});
+      cache.push([], 'result');
+      cache.query({}, function (err, res) {
+        assert.equal(res.cached, true);
+        assert.equal(res.stale, false);
+        assert.equal(res.key, '_default');
+        assert.equal(res.hit, 'result');
+        done();
+      });
+    });    
+
+    it('must use value (2)', function (done) {
+      var cache = new Cache(memoryCache, {maxValidity: 0.010});
+      cache.push([], 'result');
+      setTimeout(function () {
+        cache.query({}, function (err, res) {
+          assert.equal(res.cached, true);
+          assert.equal(res.stale, true);
+          assert.equal(res.key, '_default');
+          assert.equal(res.hit, 'result');
+          done();
+        });
+      }, 15);
+    });    
+
+    it('must use func', function (done) {
+      var cache = new Cache(memoryCache, {maxValidity: function () {
+        return 0.010;
+      }});
+      cache.push([], 'result');
+      setTimeout(function () {
+        cache.query({}, function (err, res) {
+          assert.equal(res.cached, true);
+          assert.equal(res.stale, true);
+          assert.equal(res.key, '_default');
+          assert.equal(res.hit, 'result');
+          done();
+        });
+      }, 15);
+    });
+  });
+
+
   it('must return null key', function () {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
-    var cache = new Cache(memoryCache, function (n) {return null;});
+    var cache = new Cache(memoryCache, {key: function (n) {return null;}});
     assert.equal(cache.getCacheKey('1'), null);
   });
 
   it('must not cache if key is null', function (done) {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
-    var cache = new Cache(memoryCache, function (n) {return null;});
+    var cache = new Cache(memoryCache, {key: function (n) {return null;}});
     cache.push([], 'result');
     cache.query({}, function (err, res) {
       assert.equal(res.cached, false);
@@ -44,14 +94,16 @@ describe('cache-manager', function () {
 
   it('must not cache with specific output', function (done) {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
-    var cache = new Cache(memoryCache, function (n) {
-      return n;
-    },
-    function (args, output) {
-      if (output === 'result') {
-        return 0;
+    var cache = new Cache(memoryCache, {
+      key: function (n) {
+        return n;
+      },
+      maxAge: function (args, output) {
+        if (output === 'result') {
+          return 0;
+        }
+        return Infinity;
       }
-      return Infinity;
     });
     cache.push(['1'], 'result');
     cache.query(['1'], function (err, res) {
@@ -67,9 +119,9 @@ describe('cache-manager', function () {
 
     beforeEach(function () {
       var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
-      cache = new Cache(memoryCache, function (data) {
+      cache = new Cache(memoryCache, {key: function (data) {
         return data.test;
-      });
+      }});
       cache.push([{test: '1'}], 'result1');
       cache.push([{test: '2'}], 'result2');
     });
@@ -104,9 +156,9 @@ describe('cache-manager', function () {
 
   it('must configure cache: string key/object', function (done) {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
-    var cache = new Cache(memoryCache, function (data) {
+    var cache = new Cache(memoryCache, {key: function (data) {
       return data.test;
-    });
+    }});
     cache.push([{test: [1, 2]}], 'result1');
     cache.push([{test: [3, 4]}], 'result2');
 
@@ -120,9 +172,9 @@ describe('cache-manager', function () {
 
   it('must configure cache: array key', function (done) {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
-    var cache = new Cache(memoryCache, function (data) {
+    var cache = new Cache(memoryCache, {key: function (data) {
       return data.test[0];
-    });
+    }});
     cache.push([{test: [1, 2]}], 'result1');
 
     cache.query([{test: [1, 'x']}], function (err, res1) {
@@ -135,9 +187,9 @@ describe('cache-manager', function () {
 
   it('must configure cache: array key/object', function (done) {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
-    var cache = new Cache(memoryCache, function (data) {
+    var cache = new Cache(memoryCache, {key: function (data) {
       return data.test;
-    });
+    }});
     cache.push([{test: [1, 2]}], 'result1');
 
     cache.query([{test: [1, 2]}], function (err, res1) {
@@ -150,9 +202,9 @@ describe('cache-manager', function () {
 
   it('must configure cache: func', function (done) {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
-    var cache = new Cache(memoryCache, function (config) {
+    var cache = new Cache(memoryCache, {key: function (config) {
       return config.test * 2;
-    });
+    }});
     cache.push([{test: 4}], 'result1');
 
     cache.query([{test: 4}], function (err, res1) {
@@ -168,9 +220,9 @@ describe('cache-manager', function () {
 
     beforeEach(function () {
       var memoryCache = cacheManager.caching({store: 'memory', max: 2, ttl: 10});
-      cache = new Cache(memoryCache, function (data) {
+      cache = new Cache(memoryCache, {key: function (data) {
         return data.test;
-      });
+      }});
       cache.push([{test: '1'}], 'result1');
       cache.push([{test: '2'}], 'result2');
     });
@@ -215,9 +267,9 @@ describe('cache-manager', function () {
 
     beforeEach(function () {
       var memoryCache = cacheManager.caching({store: 'memory', max: 20, ttl: 0.030});
-      cache = new Cache(memoryCache, function (data) {
+      cache = new Cache(memoryCache, {key: function (data) {
         return data.test;
-      });
+      }});
       cache.push([{test: '1'}], 'result1');
     });
 
@@ -264,12 +316,14 @@ describe('cache-manager', function () {
 
     beforeEach(function () {
       var memoryCache = cacheManager.caching({store: 'memory', max: 20, ttl: 0.030});
-      cache = new Cache(memoryCache, function (data) {
-        return data.test;
-      },
-      function (args, output) {
-        var data = args[0];
-        return data.test === '1' ? 0 : 0.050;
+      cache = new Cache(memoryCache, {
+        key: function (data) {
+          return data.test;
+        },
+        maxAge: function (args, output) {
+          var data = args[0];
+          return data.test === '1' ? 0 : 0.050;
+        }
       });
 
       cache.push([{test: '1'}], 'result1');

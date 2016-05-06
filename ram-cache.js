@@ -29,7 +29,11 @@ function Cache(opts) {
   this.getCacheKey = keyGetter(opts.key);
   this._maxAge = typeof opts.maxAge === 'undefined' ?
     function () {return Infinity;} :
-    (typeof opts.maxAge === 'function' ? opts.maxAge : function () {return opts.maxAge;});
+    (typeof opts.maxAge === 'function' ? (opts.maxAge) : function () {return opts.maxAge;});
+
+  this._maxValidity = typeof opts.maxValidity === 'undefined' ?
+    function () {return Infinity;} :
+    (typeof opts.maxValidity === 'function' ? (opts.maxValidity) : function () {return opts.maxValidity;});
 
   this._maxLen = opts.maxLen || Infinity;
 }
@@ -37,7 +41,8 @@ function Cache(opts) {
 Cache.prototype.push = function cache_push(args, output) {
   var lru,
     k = this.getCacheKey.apply(this, args),
-    maxAge = this._maxAge.call(this, args, output);
+    maxAge = this._maxAge.call(this, args, output) * 1000,
+    maxValidity = (this._maxValidity.call(this, args, output) * 1000) + Date.now();
 
   if (k === null) return; // if k is null I don't cache
 
@@ -53,7 +58,7 @@ Cache.prototype.push = function cache_push(args, output) {
     this._oldest.remove(byKey(lru.key));
   }
   // add to cache
-  this._cache[k] = output;
+  this._cache[k] = { data: output, maxValidity: maxValidity };
 
   if (this._maxLen !== Infinity) {
     // add to LRU heap
@@ -104,7 +109,7 @@ Cache.prototype.query = function cache_query(args, next) {
     if (key === null) {
       // if k is null I don't cache      
       return next(null, {
-        cached: cached,
+        cached: false,
         key: key
       });
     } 
@@ -127,7 +132,8 @@ Cache.prototype.query = function cache_query(args, next) {
   next(null, {
     cached: cached,
     key: key,
-    hit: hit
+    hit: hit && hit.data,
+    stale: hit && Boolean(hit.maxValidity && hit.maxValidity < Date.now())
   });
 };
 

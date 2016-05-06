@@ -13,7 +13,8 @@ ram-cache
 The constructor takes an option object with 3 optional attributes:
 * key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key. The value won't be cached if the function returns null
 * maxLen: the maximum number of items stored in the cache. Default: Infinity. Cache items will be purged using an LRU algorithm
-* maxAge: the maximum age of the item stored in the cache (in ms). Default: Infinity. You can also pass a function that will calculate the ttl of a specific item (0 will mean no cache). The function will take the same arguments as the "push" method (an array of inputs and the output).
+* maxAge: the maximum age of the item stored in the cache (in seconds). Default: Infinity. You can also pass a function that will calculate the ttl of a specific item (0 will mean no cache). The function will take the same arguments as the "push" method (an array of inputs and the output).
+* maxValidity: the maximum age of the item stored in the cache (in seconds) to be considered "not stale". Default: Infinity. You can also pass a function that will calculate the validity of a specific item. The function will take the same arguments as the "push" method (an array of inputs and the output).
 
 Example:
 ```js
@@ -32,12 +33,12 @@ var cache = new Cache({key: function (config){
 
 cache
 =====
-The constructor takes an cache-manager object, an optional "key" function, and an optional "getMaxAge" function. 
+The constructor takes an cache-manager object, and an "options" object.
+The options object may contain these attributes:
+* key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key. The value won't be cached if the function returns null
+* maxAge: it is a function that allows you to use a different TTL for a specific item (in seconds). If it returns 0 it will avoid caching the item. The function takes the same arguments as the "push" method (an array of inputs and the output). If it returns undefined, the default ttl will be used.
+* maxValidity: the maximum age of an item stored in the cache before being considered "stale" (in seconds). Default: Infinity. You can also pass a function that will calculate the validity of a specific item. The function will take the same arguments as the "push" method (an array of inputs and the output).
 
-The "key" function will be used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key.  The value won't be cached if the function returns null.
-
-"getMaxAge" allows you to use a different TTL for a specific item. It must be a function and it takes the same arguments as the "push" method (an array of inputs and the output). It returns the TTL in seconds (YES, THESE ARE SECONDS INSTEAD OF MILLISECONDS!!!). Infinity means: forever, 0 means: don't cache.
-If it returns undefined, the default ttl will be used.
 Example:
 ```js
 var Cache = require('memoize-cache/cache'); // or require('memoize-cache').cache;
@@ -70,6 +71,7 @@ cache.query(args, function (err, result){
   // result.cached is true when you find a cached value
   // result.hit is the value cached
   // cached.key is the key used to store the value (might be useful for debugging)
+  // cache.stale (true/false) depending on the maxValidity function (if defined)
 });
 ```
 "args" is an array containing the arguments passed to the function that generated the output.

@@ -20,9 +20,54 @@ describe('cache', function () {
     cache.push([], 'result');
     cache.query({}, function (err, res) {
       assert.equal(res.cached, true);
+      assert.equal(res.stale, false);
       assert.equal(res.key, '_default');
       assert.equal(res.hit, 'result');
       done();
+    });
+  });
+
+  describe('maxValidity', function () {
+    it('must use value', function (done) {
+      var cache = new Cache({maxValidity: 0.010});
+      cache.push([], 'result');
+      cache.query({}, function (err, res) {
+        assert.equal(res.cached, true);
+        assert.equal(res.stale, false);
+        assert.equal(res.key, '_default');
+        assert.equal(res.hit, 'result');
+        done();
+      });
+    });
+
+    it('must use value (2)', function (done) {
+      var cache = new Cache({maxValidity: 0.010});
+      cache.push([], 'result');
+      setTimeout(function () {
+        cache.query({}, function (err, res) {
+          assert.equal(res.cached, true);
+          assert.equal(res.stale, true);
+          assert.equal(res.key, '_default');
+          assert.equal(res.hit, 'result');
+          done();
+        });
+      }, 15);
+    });    
+
+    it('must use func', function (done) {
+      var cache = new Cache({maxValidity: function () {
+        return 0.010;
+      }});
+      cache.push([], 'result');
+      setTimeout(function () {
+        cache.query({}, function (err, res) {
+          assert.equal(res.cached, true);
+          assert.equal(res.stale, true);
+          assert.equal(res.key, '_default');
+          assert.equal(res.hit, 'result');
+          done();
+        });
+      }, 15);
     });
   });
 
@@ -62,7 +107,7 @@ describe('cache', function () {
   it('must return a size', function () {
     var cache = new Cache();
     cache.push([], 'result');
-    assert.equal(cache.size(true), '28B');
+    assert.equal(cache.size(true), '66B');
   });
 
   describe('simple key', function () {
@@ -79,6 +124,7 @@ describe('cache', function () {
     it('must configure cache: string key 1', function (done) {
       cache.query([{test: '1'}], function (err, res1) {
         assert.equal(res1.cached, true);
+        assert.equal(res1.stale, false);
         assert.equal(res1.key, '1');
         assert.equal(res1.hit, 'result1');
         done();
@@ -88,6 +134,7 @@ describe('cache', function () {
     it('must configure cache: string key 2', function (done) {
       cache.query([{test: '2'}], function (err, res2) {
         assert.equal(res2.cached, true);
+        assert.equal(res2.stale, false);
         assert.equal(res2.key, '2');
         assert.equal(res2.hit, 'result2');
         done();
@@ -113,6 +160,7 @@ describe('cache', function () {
 
     cache.query([{test: [1, 2]}], function (err, res1) {
       assert.equal(res1.cached, true);
+      assert.equal(res1.stale, false);
       assert.equal(res1.key, 'f79408e5ca998cd53faf44af31e6eb45');
       assert.equal(res1.hit, 'result1');
       done();
@@ -127,6 +175,7 @@ describe('cache', function () {
 
     cache.query([{test: [1, 'x']}], function (err, res1) {
       assert.equal(res1.cached, true);
+      assert.equal(res1.stale, false);
       assert.equal(res1.key, 'c4ca4238a0b923820dcc509a6f75849b');
       assert.equal(res1.hit, 'result1');
       done();
@@ -225,7 +274,7 @@ describe('cache', function () {
     beforeEach(function () {
       cache = new Cache({key: function (data) {
         return data.test;
-      }, maxAge: 30});
+      }, maxAge: 0.030});
       cache.push([{test: '1'}], 'result1');
     });
 
@@ -277,7 +326,7 @@ describe('cache', function () {
         },
         maxAge: function (args, output) {
           var data = args[0];
-          return data.test === '1' ? 0 : 50;
+          return data.test === '1' ? 0 : 0.050;
         }});
       cache.push([{test: '1'}], 'result1');
     });
