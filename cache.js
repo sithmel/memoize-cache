@@ -13,6 +13,8 @@ function Cache(cacheManager, opts) {
   Promise.promisifyAll(this.cacheManager);
   this.getCacheKey = keyGetter(opts.key);
   this._getMaxAge = opts.maxAge;
+  this.serialize = opts.serialize || function (v) { return v; };
+  this.deserialize = opts.deserialize || function (v) { return v; };
 
   this._maxValidity = typeof opts.maxValidity === 'undefined' ?
     function () {return Infinity;} :
@@ -32,7 +34,7 @@ Cache.prototype.push = function cache_push(args, output) {
     return;
   }
 
-  var data = { data: output, maxValidity: maxValidity };
+  var data = { data: this.serialize(output), maxValidity: maxValidity };
   var task = this.cacheManager.setAsync(k, data, maxAge ? {ttl: maxAge} : undefined);
   this._tasksToComplete.push(task);
 };
@@ -42,7 +44,7 @@ Cache.prototype.query = function cache_query(args, next) {
   var that = this;
 
   if (key === null) {
-    // if k is null I don't cache      
+    // if k is null I don't cache
     return next(null, {
       cached: false,
       key: key
@@ -61,7 +63,7 @@ Cache.prototype.query = function cache_query(args, next) {
       next(null, {
         cached: true,
         key: key,
-        hit: res.data,
+        hit: that.deserialize(res.data),
         stale: Boolean(res.maxValidity && res.maxValidity < Date.now())
       });
     }

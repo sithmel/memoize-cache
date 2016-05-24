@@ -1,6 +1,8 @@
 var assert = require('chai').assert;
 var Cache = require('../cache');
 var cacheManager = require('cache-manager');
+var lzma = require('lzma-purejs');
+var snappy = require('snappy');
 
 describe('cache-manager', function () {
 
@@ -27,7 +29,7 @@ describe('cache-manager', function () {
   describe('maxValidity', function () {
     var memoryCache;
     beforeEach(function () {
-      memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});      
+      memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
     });
 
     it('must use value', function (done) {
@@ -40,7 +42,7 @@ describe('cache-manager', function () {
         assert.equal(res.hit, 'result');
         done();
       });
-    });    
+    });
 
     it('must use value (2)', function (done) {
       var cache = new Cache(memoryCache, {maxValidity: 0.010});
@@ -54,7 +56,7 @@ describe('cache-manager', function () {
           done();
         });
       }, 15);
-    });    
+    });
 
     it('must use func', function (done) {
       var cache = new Cache(memoryCache, {maxValidity: function () {
@@ -360,6 +362,56 @@ describe('cache-manager', function () {
           done();
         });
       }, 60);
+    });
+  });
+
+  it('must serialize/deserialize data with lzma', function (done) {
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+
+    var serialize = function (obj) {
+      var data = new Buffer(JSON.stringify(obj), 'utf8');
+      var compressed = lzma.compressFile(data);
+      return compressed;
+    };
+
+    var deserialize = function (buf) {
+      var uncompressed = lzma.decompressFile(buf);
+      var data2 = new Buffer(uncompressed).toString('utf8');
+      return JSON.parse(data2);
+    };
+
+    var cache = new Cache(memoryCache, {serialize: serialize, deserialize: deserialize});
+    cache.push([], 'result');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, true);
+      assert.equal(res.key, '_default');
+      assert.equal(res.hit, 'result');
+      done();
+    });
+  });
+
+  it('must serialize/deserialize data with snappy', function (done) {
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+
+    var serialize = function (obj) {
+      var data = new Buffer(JSON.stringify(obj), 'utf8');
+      var compressed = snappy.compressSync(data);
+      return compressed;
+    };
+
+    var deserialize = function (buf) {
+      var uncompressed = snappy.uncompressSync(buf);
+      var data2 = new Buffer(uncompressed).toString('utf8');
+      return JSON.parse(data2);
+    };
+
+    var cache = new Cache(memoryCache, {serialize: serialize, deserialize: deserialize});
+    cache.push([], 'result');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, true);
+      assert.equal(res.key, '_default');
+      assert.equal(res.hit, 'result');
+      done();
     });
   });
 });

@@ -35,6 +35,9 @@ function Cache(opts) {
     function () {return Infinity;} :
     (typeof opts.maxValidity === 'function' ? (opts.maxValidity) : function () {return opts.maxValidity;});
 
+  this.serialize = opts.serialize || function (v) { return v; };
+  this.deserialize = opts.deserialize || function (v) { return v; };
+
   this._maxLen = opts.maxLen || Infinity;
 }
 
@@ -49,7 +52,7 @@ Cache.prototype.push = function cache_push(args, output) {
   if (!maxAge) return;
   if (k in this._cache) return;
 
-  if(this._LRU.size() === this._maxLen) {
+  if (this._LRU.size() === this._maxLen) {
     // remove from LRU heap
     lru = this._LRU.pop();
     // remove from cache
@@ -58,7 +61,7 @@ Cache.prototype.push = function cache_push(args, output) {
     this._oldest.remove(byKey(lru.key));
   }
   // add to cache
-  this._cache[k] = { data: output, maxValidity: maxValidity };
+  this._cache[k] = { data: this.serialize(output), maxValidity: maxValidity };
 
   if (this._maxLen !== Infinity) {
     // add to LRU heap
@@ -107,12 +110,12 @@ Cache.prototype.query = function cache_query(args, next) {
     key = this.getCacheKey.apply(this, args);
 
     if (key === null) {
-      // if k is null I don't cache      
+      // if k is null I don't cache
       return next(null, {
         cached: false,
         key: key
       });
-    } 
+    }
 
     if (key in this._cache) {
       cached = true;
@@ -132,7 +135,7 @@ Cache.prototype.query = function cache_query(args, next) {
   next(null, {
     cached: cached,
     key: key,
-    hit: hit && hit.data,
+    hit: hit && this.deserialize(hit.data),
     stale: hit && Boolean(hit.maxValidity && hit.maxValidity < Date.now())
   });
 };
