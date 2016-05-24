@@ -2,7 +2,7 @@ var assert = require('chai').assert;
 var Cache = require('../cache');
 var cacheManager = require('cache-manager');
 var lzma = require('lzma-purejs');
-var snappy = require('snappy');
+// var snappy = require('snappy');
 
 describe('cache-manager', function () {
 
@@ -390,28 +390,28 @@ describe('cache-manager', function () {
     });
   });
 
-  it('must serialize/deserialize data with snappy', function (done) {
-    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
-
-    var serialize = function (obj) {
-      var data = new Buffer(JSON.stringify(obj), 'utf8');
-      var compressed = snappy.compressSync(data);
-      return compressed;
-    };
-
-    var deserialize = function (buf) {
-      var uncompressed = snappy.uncompressSync(buf);
-      var data2 = new Buffer(uncompressed).toString('utf8');
-      return JSON.parse(data2);
-    };
-
-    var cache = new Cache(memoryCache, {serialize: serialize, deserialize: deserialize});
-    cache.push([], 'result');
-    cache.query({}, function (err, res) {
-      assert.equal(res.cached, true);
-      assert.equal(res.key, '_default');
-      assert.equal(res.hit, 'result');
-      done();
-    });
-  });
+  // it('must serialize/deserialize data with snappy', function (done) {
+  //   var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+  //
+  //   var serialize = function (obj) {
+  //     var data = new Buffer(JSON.stringify(obj), 'utf8');
+  //     var compressed = snappy.compressSync(data);
+  //     return compressed;
+  //   };
+  // 
+  //   var deserialize = function (buf) {
+  //     var uncompressed = snappy.uncompressSync(buf);
+  //     var data2 = new Buffer(uncompressed).toString('utf8');
+  //     return JSON.parse(data2);
+  //   };
+  //
+  //   var cache = new Cache(memoryCache, {serialize: serialize, deserialize: deserialize});
+  //   cache.push([], 'result');
+  //   cache.query({}, function (err, res) {
+  //     assert.equal(res.cached, true);
+  //     assert.equal(res.key, '_default');
+  //     assert.equal(res.hit, 'result');
+  //     done();
+  //   });
+  // });
 });
