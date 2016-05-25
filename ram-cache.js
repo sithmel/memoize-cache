@@ -103,7 +103,9 @@ Cache.prototype.query = function cache_query(args, next) {
   var hit,
     cached = false,
     lru,
-    key;
+    key,
+    alreadyCalledCB = false;
+
   try {
     this._purgeByAge(); // purge stale cache entries
 
@@ -111,6 +113,7 @@ Cache.prototype.query = function cache_query(args, next) {
 
     if (key === null) {
       // if k is null I don't cache
+      alreadyCalledCB = true;
       return next(null, {
         cached: false,
         key: key
@@ -129,7 +132,12 @@ Cache.prototype.query = function cache_query(args, next) {
     }
   }
   catch (e) {
-    return next(e);
+    if (!alreadyCalledCB) {
+      return next(e);
+    }
+    else {
+      throw(e);
+    }
   }
 
   next(null, {
