@@ -37,6 +37,7 @@ Cache.prototype.push = function cache_push(args, output) {
   var data = { data: this.serialize(output), maxValidity: maxValidity };
   var task = this.cacheManager.setAsync(k, data, maxAge ? {ttl: maxAge} : undefined);
   this._tasksToComplete.push(task);
+  return true;
 };
 
 Cache.prototype.query = function cache_query(args, next) {

@@ -74,6 +74,7 @@ Cache.prototype.push = function cache_push(args, output) {
       expireTs: Date.now() + maxAge
     });
   }
+  return true;
 };
 
 Cache.prototype._purgeByAge = function cache__purgeByAge() {
