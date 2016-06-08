@@ -2,7 +2,7 @@ var assert = require('chai').assert;
 var Cache = require('../cache');
 var cacheManager = require('cache-manager');
 var lzma = require('lzma-purejs');
-// var snappy = require('snappy');
+var snappy = require('snappy');
 
 describe('cache-manager', function () {
 
@@ -390,28 +390,100 @@ describe('cache-manager', function () {
     });
   });
 
-  // it('must serialize/deserialize data with snappy', function (done) {
-  //   var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
-  //
-  //   var serialize = function (obj) {
-  //     var data = new Buffer(JSON.stringify(obj), 'utf8');
-  //     var compressed = snappy.compressSync(data);
-  //     return compressed;
-  //   };
-  // 
-  //   var deserialize = function (buf) {
-  //     var uncompressed = snappy.uncompressSync(buf);
-  //     var data2 = new Buffer(uncompressed).toString('utf8');
-  //     return JSON.parse(data2);
-  //   };
-  //
-  //   var cache = new Cache(memoryCache, {serialize: serialize, deserialize: deserialize});
-  //   cache.push([], 'result');
-  //   cache.query({}, function (err, res) {
-  //     assert.equal(res.cached, true);
-  //     assert.equal(res.key, '_default');
-  //     assert.equal(res.hit, 'result');
-  //     done();
-  //   });
-  // });
+  it('must serialize/deserialize data with snappy', function (done) {
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+
+    var serialize = function (obj) {
+      var data = new Buffer(JSON.stringify(obj), 'utf8');
+      var compressed = snappy.compressSync(data);
+      return compressed;
+    };
+
+    var deserialize = function (buf) {
+      var uncompressed = snappy.uncompressSync(buf);
+      var data2 = new Buffer(uncompressed).toString('utf8');
+      return JSON.parse(data2);
+    };
+
+    var cache = new Cache(memoryCache, {serialize: serialize, deserialize: deserialize});
+    cache.push([], 'result');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, true);
+      assert.equal(res.key, '_default');
+      assert.equal(res.hit, 'result');
+      done();
+    });
+  });
+
+  it('must serialize/deserialize data with snappy async', function (done) {
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+
+    var serialize = function (obj, cb) {
+      snappy.compress(JSON.stringify(obj), function (err, buf) {
+        cb(err, buf.toString());
+      });
+    };
+
+    var deserialize = function (str, cb) {
+      var buf = Buffer.from(str);
+      snappy.uncompress(buf, { asBuffer: false }, function (err, uncompressed) {
+        var obj;
+        if (err) {
+          cb(err);
+        }
+        else {
+          try {
+            obj = JSON.parse(uncompressed);
+          }
+          catch (e) {
+            return cb(e);
+          }
+          cb(null, obj);
+        }
+      });
+    };
+
+    var cache = new Cache(memoryCache, {serializeAsync: serialize, deserializeAsync: deserialize});
+    cache.push([], 'result');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, true);
+      assert.equal(res.key, '_default');
+      assert.equal(res.hit, 'result');
+      done();
+    });
+  });
+
+  it('must serialize/deserialize data with snappy (use flag)', function (done) {
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+
+    var cache = new Cache(memoryCache, {compress: true});
+    cache.push([], 'result');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, true);
+      assert.equal(res.key, '_default');
+      assert.equal(res.hit, 'result');
+      done();
+    });
+  });
+
+  it('must serialize/deserialize data with snappy (use flag + serialize)', function (done) {
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+
+    var serialize = function (obj) {
+      return obj.split();
+    };
+
+    var deserialize = function (arr) {
+      return arr.join('');
+    };
+
+    var cache = new Cache(memoryCache, {compress: true, serialize: serialize, deserialize: deserialize});
+    cache.push([], 'result');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, true);
+      assert.equal(res.key, '_default');
+      assert.equal(res.hit, 'result');
+      done();
+    });
+  });
 });

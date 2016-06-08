@@ -1,7 +1,6 @@
 var assert = require('chai').assert;
 var Cache = require('../ram-cache');
 var lzma = require('lzma-purejs');
-// var snappy = require('snappy');
 
 describe('cache', function () {
 
@@ -400,27 +399,4 @@ describe('cache', function () {
       done();
     });
   });
-
-  // it('must serialize/deserialize data with snappy', function (done) {
-  //   var serialize = function (obj) {
-  //     var data = new Buffer(JSON.stringify(obj), 'utf8');
-  //     var compressed = snappy.compressSync(data);
-  //     return compressed;
-  //   };
-  //
-  //   var deserialize = function (buf) {
-  //     var uncompressed = snappy.uncompressSync(buf);
-  //     var data2 = new Buffer(uncompressed).toString('utf8');
-  //     return JSON.parse(data2);
-  //   };
-  //
-  //   var cache = new Cache({serialize: serialize, deserialize: deserialize});
-  //   cache.push([], 'result');
-  //   cache.query({}, function (err, res) {
-  //     assert.equal(res.cached, true);
-  //     assert.equal(res.key, '_default');
-  //     assert.equal(res.hit, 'result');
-  //     done();
-  //   });
-  // });
 });

@@ -1,6 +1,8 @@
 var Promise = require('bluebird');
 var keyGetter = require('./key-getter');
-
+var callbackify = require('async-deco/utils/callbackify');
+var waterfall = require('async-deco/utils/waterfall');
+var snappy = require('./utils/snappy');
 /*
 
 Cache object
@@ -13,8 +15,17 @@ function Cache(cacheManager, opts) {
   Promise.promisifyAll(this.cacheManager);
   this.getCacheKey = keyGetter(opts.key);
   this._getMaxAge = opts.maxAge;
-  this.serialize = opts.serialize || function (v) { return v; };
-  this.deserialize = opts.deserialize || function (v) { return v; };
+
+  var serialize = opts.serializeAsync || (opts.serialize && callbackify(opts.serialize)) || function (v, cb) { cb(null, v); };
+  var deserialize = opts.deserializeAsync || (opts.deserialize && callbackify(opts.deserialize)) || function (v, cb) { cb(null, v); };
+  if (opts.compress) {
+    this.serialize = waterfall(serialize, snappy.compress);
+    this.deserialize = waterfall(snappy.decompress, deserialize);
+  }
+  else {
+    this.serialize = serialize;
+    this.deserialize = deserialize;
+  }
 
   this._maxValidity = typeof opts.maxValidity === 'undefined' ?
     function () {return Infinity;} :
@@ -24,6 +35,8 @@ function Cache(cacheManager, opts) {
 }
 
 Cache.prototype.push = function cache_push(args, output) {
+  var serialize = this.serialize;
+  var cacheManager = this.cacheManager;
   var k = this.getCacheKey.apply(this, args);
   var maxAge = this._getMaxAge ? this._getMaxAge.call(this, args, output) : undefined;
   var maxValidity = (this._maxValidity.call(this, args, output) * 1000) + Date.now();
@@ -34,8 +47,23 @@ Cache.prototype.push = function cache_push(args, output) {
     return;
   }
 
-  var data = { data: this.serialize(output), maxValidity: maxValidity };
-  var task = this.cacheManager.setAsync(k, data, maxAge ? {ttl: maxAge} : undefined);
+  var task = Promise.resolve(output)
+  .then(function (o) {
+    return new Promise(function (resolve, reject) {
+      serialize(o, function (err, data) {
+        if (err) {
+          reject(err);
+        }
+        else {
+          resolve(data);
+        }
+      });
+    });
+  })
+  .then(function (o) {
+    var data = { data: o, maxValidity: maxValidity };
+    return cacheManager.setAsync(k, data, maxAge ? {ttl: maxAge} : undefined);
+  });
   this._tasksToComplete.push(task);
   return true;
 };
@@ -62,11 +90,30 @@ Cache.prototype.query = function cache_query(args, next) {
     return that.cacheManager.getAsync(key);
   })
   .then(function (res) {
+    if (!res) {
+      return {};
+    }
+    else {
+      return new Promise(function (resolve, reject) {
+        that.deserialize(res.data, function (err, data) {
+          if (err) {
+            reject(err);
+          }
+          else {
+            resolve({ data: data, res: res });
+          }
+        });
+      });
+    }
+  })
+  .then(function (o) {
+    var res = o.res;
+    var data = o.data;
     if (res) {
       obj = {
         cached: true,
         key: key,
-        hit: that.deserialize(res.data),
+        hit: data,
         stale: Boolean(res.maxValidity && res.maxValidity < Date.now())
       };
       alreadyCalledCB = true;
