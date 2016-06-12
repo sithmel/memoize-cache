@@ -488,6 +488,7 @@ describe('cache-manager', function () {
     var cache = new Cache(memoryCache, {serializeAsync: serialize, deserializeAsync: deserialize});
     cache.push([], 'result');
     cache.query({}, function (err, res) {
+      console.log(err);
       assert.equal(res.cached, true);
       assert.equal(res.key, '_default');
       assert.equal(res.hit, 'result');
