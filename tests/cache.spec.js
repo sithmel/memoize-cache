@@ -1,6 +1,7 @@
 var assert = require('chai').assert;
 var Cache = require('../cache');
 var cacheManager = require('cache-manager');
+var redisStore = require('cache-manager-redis');
 var lzma = require('lzma-purejs');
 var snappy = require('snappy');
 
@@ -155,6 +156,47 @@ describe('cache-manager', function () {
       });
     });
   });
+
+  describe('simple key (redis)', function () {
+    var cache;
+
+    beforeEach(function () {
+      var memoryCache = cacheManager.caching({store: redisStore, max: 100, ttl: 10});
+      cache = new Cache(memoryCache, {key: function (data) {
+        return data.test;
+      }});
+      cache.push([{test: '1'}], 'result1');
+      cache.push([{test: '2'}], 'result2');
+    });
+
+    it('must configure cache: string key 1', function (done) {
+      cache.query([{test: '1'}], function (err, res1) {
+        assert.equal(res1.cached, true);
+        assert.equal(res1.key, '1');
+        assert.equal(res1.hit, 'result1');
+        done();
+      });
+    });
+
+    it('must configure cache: string key 2', function (done) {
+      cache.query([{test: '2'}], function (err, res2) {
+        assert.equal(res2.cached, true);
+        assert.equal(res2.key, '2');
+        assert.equal(res2.hit, 'result2');
+        done();
+      });
+    });
+
+    it('must configure cache: string key 3', function (done) {
+      cache.query([{test: '3'}], function (err, res3) {
+        assert.equal(res3.cached, false);
+        assert.equal(res3.key, '3');
+        assert.isUndefined(res3.hit);
+        done();
+      });
+    });
+  });
+
 
   it('must configure cache: string key/object', function (done) {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
