@@ -2,12 +2,12 @@ var snappy = require('snappy');
 
 var compress = function (obj, cb) {
   snappy.compress(JSON.stringify(obj), function (err, buf) {
-    cb(err, buf.toString());
+    cb(err, buf.toString('binary'));
   });
 };
 
 var decompress = function (str, cb) {
-  var buf = Buffer.from(str);
+  var buf = Buffer.from(str, 'binary');
   snappy.uncompress(buf, { asBuffer: false }, function (err, uncompressed) {
     var obj;
     if (err) {

@@ -436,14 +436,14 @@ describe('cache-manager', function () {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
 
     var serialize = function (obj) {
-      var data = new Buffer(JSON.stringify(obj), 'utf8');
+      var data = new Buffer(JSON.stringify(obj), 'binary');
       var compressed = snappy.compressSync(data);
       return compressed;
     };
 
     var deserialize = function (buf) {
       var uncompressed = snappy.uncompressSync(buf);
-      var data2 = new Buffer(uncompressed).toString('utf8');
+      var data2 = new Buffer(uncompressed).toString('binary');
       return JSON.parse(data2);
     };
 
@@ -462,12 +462,12 @@ describe('cache-manager', function () {
 
     var serialize = function (obj, cb) {
       snappy.compress(JSON.stringify(obj), function (err, buf) {
-        cb(err, buf.toString());
+        cb(err, buf.toString('binary'));
       });
     };
 
     var deserialize = function (str, cb) {
-      var buf = Buffer.from(str);
+      var buf = Buffer.from(str, 'binary');
       snappy.uncompress(buf, { asBuffer: false }, function (err, uncompressed) {
         var obj;
         if (err) {
@@ -488,7 +488,6 @@ describe('cache-manager', function () {
     var cache = new Cache(memoryCache, {serializeAsync: serialize, deserializeAsync: deserialize});
     cache.push([], 'result');
     cache.query({}, function (err, res) {
-      console.log(err);
       assert.equal(res.cached, true);
       assert.equal(res.key, '_default');
       assert.equal(res.hit, 'result');
