@@ -433,7 +433,7 @@ describe('cache-manager', function () {
   });
 
   it('must serialize/deserialize data with snappy', function (done) {
-    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 100});
 
     var serialize = function (obj) {
       var data = new Buffer(JSON.stringify(obj), 'binary');
@@ -458,7 +458,7 @@ describe('cache-manager', function () {
   });
 
   it('must serialize/deserialize data with snappy async', function (done) {
-    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 100});
 
     var serialize = function (obj, cb) {
       snappy.compress(JSON.stringify(obj), function (err, buf) {
@@ -496,7 +496,7 @@ describe('cache-manager', function () {
   });
 
   it('must serialize/deserialize data with snappy (use flag)', function (done) {
-    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 100});
 
     var cache = new Cache(memoryCache, {compress: true});
     cache.push([], 'result');
@@ -509,7 +509,7 @@ describe('cache-manager', function () {
   });
 
   it('must serialize/deserialize data with snappy (use flag + serialize)', function (done) {
-    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 100});
 
     var serialize = function (obj) {
       return obj.split();
