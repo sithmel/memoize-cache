@@ -468,7 +468,8 @@ describe('cache-manager', function () {
 
     var deserialize = function (str, cb) {
       console.log('before', str);
-      var buf = Buffer.from(str, 'binary');
+      // var buf = Buffer.from(str, 'binary');
+      var buf = new Buffer(str, 'binary');
       console.log('after', buf);
       snappy.uncompress(buf, { asBuffer: false }, function (err, uncompressed) {
         console.log('deserialize', err, uncompressed);
