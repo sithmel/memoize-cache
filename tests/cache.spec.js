@@ -433,7 +433,7 @@ describe('cache-manager', function () {
   });
 
   it('must serialize/deserialize data with snappy', function (done) {
-    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 100});
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
 
     var serialize = function (obj) {
       var data = new Buffer(JSON.stringify(obj), 'binary');
@@ -457,11 +457,12 @@ describe('cache-manager', function () {
     });
   });
 
-  it('must serialize/deserialize data with snappy async', function (done) {
-    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 100});
+  it.only('must serialize/deserialize data with snappy async', function (done) {
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
 
     var serialize = function (obj, cb) {
       snappy.compress(JSON.stringify(obj), function (err, buf) {
+        console.log('serialize', err);
         cb(err, buf.toString('binary'));
       });
     };
@@ -469,6 +470,7 @@ describe('cache-manager', function () {
     var deserialize = function (str, cb) {
       var buf = Buffer.from(str, 'binary');
       snappy.uncompress(buf, { asBuffer: false }, function (err, uncompressed) {
+        console.log('deserialize', err);
         var obj;
         if (err) {
           cb(err);
@@ -496,7 +498,7 @@ describe('cache-manager', function () {
   });
 
   it('must serialize/deserialize data with snappy (use flag)', function (done) {
-    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 100});
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
 
     var cache = new Cache(memoryCache, {compress: true});
     cache.push([], 'result');
@@ -509,7 +511,7 @@ describe('cache-manager', function () {
   });
 
   it('must serialize/deserialize data with snappy (use flag + serialize)', function (done) {
-    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 100});
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
 
     var serialize = function (obj) {
       return obj.split();
