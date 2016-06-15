@@ -457,7 +457,7 @@ describe('cache-manager', function () {
     });
   });
 
-  it.only('must serialize/deserialize data with snappy async', function (done) {
+  it('must serialize/deserialize data with snappy async', function (done) {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
 
     var serialize = function (obj, cb) {
@@ -467,12 +467,9 @@ describe('cache-manager', function () {
     };
 
     var deserialize = function (str, cb) {
-      console.log('before', str);
       // var buf = Buffer.from(str, 'binary');
       var buf = new Buffer(str, 'binary');
-      console.log('after', buf);
       snappy.uncompress(buf, { asBuffer: false }, function (err, uncompressed) {
-        console.log('deserialize', err, uncompressed);
         var obj;
         if (err) {
           cb(err);

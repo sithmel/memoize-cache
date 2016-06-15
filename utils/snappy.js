@@ -7,7 +7,8 @@ var compress = function (obj, cb) {
 };
 
 var decompress = function (str, cb) {
-  var buf = Buffer.from(str, 'binary');
+  // var buf = Buffer.from(str, 'binary');
+  var buf = new Buffer(str, 'binary');
   snappy.uncompress(buf, { asBuffer: false }, function (err, uncompressed) {
     var obj;
     if (err) {
