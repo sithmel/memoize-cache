@@ -462,7 +462,6 @@ describe('cache-manager', function () {
 
     var serialize = function (obj, cb) {
       snappy.compress(JSON.stringify(obj), function (err, buf) {
-        console.log('serialize', err, buf);
         cb(err, buf.toString('binary'));
       });
     };
@@ -470,6 +469,7 @@ describe('cache-manager', function () {
     var deserialize = function (str, cb) {
       console.log('before', str);
       var buf = Buffer.from(str, 'binary');
+      console.log('after', buf);
       snappy.uncompress(buf, { asBuffer: false }, function (err, uncompressed) {
         console.log('deserialize', err, uncompressed);
         var obj;
@@ -491,6 +491,7 @@ describe('cache-manager', function () {
     var cache = new Cache(memoryCache, {serializeAsync: serialize, deserializeAsync: deserialize});
     cache.push([], 'result');
     cache.query({}, function (err, res) {
+      console.log(err, res);
       assert.equal(res.cached, true);
       assert.equal(res.key, '_default');
       assert.equal(res.hit, 'result');
