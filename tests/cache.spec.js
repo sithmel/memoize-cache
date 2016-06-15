@@ -462,15 +462,16 @@ describe('cache-manager', function () {
 
     var serialize = function (obj, cb) {
       snappy.compress(JSON.stringify(obj), function (err, buf) {
-        console.log('serialize', err);
+        console.log('serialize', err, buf);
         cb(err, buf.toString('binary'));
       });
     };
 
     var deserialize = function (str, cb) {
+      console.log('before', str);
       var buf = Buffer.from(str, 'binary');
       snappy.uncompress(buf, { asBuffer: false }, function (err, uncompressed) {
-        console.log('deserialize', err);
+        console.log('deserialize', err, uncompressed);
         var obj;
         if (err) {
           cb(err);
