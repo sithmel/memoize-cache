@@ -50,23 +50,25 @@ Cache.prototype.push = function cache_push(args, output) {
   if (k === null) return; // if k is null I don't cache
 
   if (!maxAge) return;
-  if (k in this._cache) return;
 
-  if (this._LRU.size() === this._maxLen) {
-    // remove from LRU heap
-    lru = this._LRU.pop();
-    // remove from cache
-    delete this._cache[lru.key];
-    // remove from stale objects cache
-    this._oldest.remove(byKey(lru.key));
+  if (!(k in this._cache)) { //  not cached yet
+    if (this._LRU.size() === this._maxLen) { // prepare a place fr LRU
+      // remove from LRU heap
+      lru = this._LRU.pop();
+      // remove from cache
+      delete this._cache[lru.key];
+      // remove from stale objects cache
+      this._oldest.remove(byKey(lru.key));
+    }
+    if (this._maxLen !== Infinity) { // add to LRU
+      // add to LRU heap
+      this._LRU.push({key: k, times: 0});
+    }
   }
-  // add to cache
-  this._cache[k] = { data: this.serialize(output), maxValidity: maxValidity };
+  else { // already in cache
+    this._oldest.remove(byKey(k)); // remove from
+  }
 
-  if (this._maxLen !== Infinity) {
-    // add to LRU heap
-    this._LRU.push({key: k, times: 0});
-  }
   if (maxAge !== Infinity) {
     // add to stale objects cache
     this._oldest.push({
@@ -74,6 +76,10 @@ Cache.prototype.push = function cache_push(args, output) {
       expireTs: Date.now() + maxAge
     });
   }
+
+  // add to cache
+  this._cache[k] = { data: this.serialize(output), maxValidity: maxValidity };
+
   return true;
 };
 
@@ -92,12 +98,6 @@ Cache.prototype._purgeByAge = function cache__purgeByAge() {
       break;
     }
   }
-};
-
-Cache.prototype.reset = function cache_reset() {
-  this._cache = {}; // key, value
-  this._LRU = new Heap(sortByLessPopular);
-  this._oldest = new Heap(sortByOldest);
 };
 
 Cache.prototype.query = function cache_query(args, next) {
@@ -147,6 +147,18 @@ Cache.prototype.query = function cache_query(args, next) {
     hit: hit && this.deserialize(hit.data),
     stale: hit && Boolean(hit.maxValidity && hit.maxValidity < Date.now())
   });
+};
+
+Cache.prototype.del = function cache_del(k) {
+  delete this._cache[k];
+  this._oldest.remove(byKey(k));
+  this._LRU.remove(byKey(k));
+};
+
+Cache.prototype.reset = function cache_reset() {
+  this._cache = {}; // key, value
+  this._LRU = new Heap(sortByLessPopular);
+  this._oldest = new Heap(sortByOldest);
 };
 
 Cache.prototype.size = function cache_size(pretty) {

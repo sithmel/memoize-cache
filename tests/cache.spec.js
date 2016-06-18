@@ -27,6 +27,20 @@ describe('cache-manager', function () {
     });
   });
 
+  it('must push twice', function (done) {
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+    var cache = new Cache(memoryCache);
+    cache.push([], 'result1');
+    cache.push([], 'result2');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, true);
+      assert.equal(res.stale, false);
+      assert.equal(res.key, '_default');
+      assert.equal(res.hit, 'result2');
+      done();
+    });
+  });
+
   describe('maxValidity', function () {
     var memoryCache;
     beforeEach(function () {

@@ -28,6 +28,31 @@ describe('cache', function () {
     });
   });
 
+  it('must push twice', function (done) {
+    var cache = new Cache();
+    cache.push([], 'result1');
+    cache.push([], 'result2');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, true);
+      assert.equal(res.stale, false);
+      assert.equal(res.key, '_default');
+      assert.equal(res.hit, 'result2');
+      done();
+    });
+  });
+
+  it('must del key', function (done) {
+    var cache = new Cache();
+    cache.push([], 'result1');
+    cache.del('_default');
+    cache.query({}, function (err, res) {
+      assert.equal(res.cached, false);
+      assert.equal(res.key, '_default');
+      assert.isUndefined(res.hit);
+      done();
+    });
+  });
+
   describe('maxValidity', function () {
     it('must use value', function (done) {
       var cache = new Cache({maxValidity: 0.010});

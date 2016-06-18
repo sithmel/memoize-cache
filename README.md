@@ -94,9 +94,16 @@ It uses the function passed in the factory function. If it returns a string it u
 
 resetting the cache
 -------------------
-This is implemented only on ram-cache.
+This is implemented only on ram-cache. cache-manager provides an equivalent method.
 ```js
 cache.reset();
+```
+
+removing a key
+--------------
+This is implemented only on ram-cache. cache-manager provides an equivalent method.
+```js
+cache.del(key);
 ```
 
 getting the number of item cached
