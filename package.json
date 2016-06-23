@@ -31,6 +31,7 @@
     "npm-release": "^1.0.0"
   },
   "dependencies": {
+    "memoize-cache-utils": "^0.0.2",
     "async-deco": "^5.1.1",
     "bluebird": "^3.3.4",
     "md5-o-matic": "^0.1.1",

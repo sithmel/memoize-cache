@@ -1,6 +1,6 @@
 var sizeof = require('sizeof');
 var Heap = require('./heap');
-var keyGetter = require('./key-getter');
+var keyGetter = require('memoize-cache-utils/key-getter');
 
 /*
 

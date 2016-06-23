@@ -122,12 +122,3 @@ cache.size(true);  // size is an human readable size
 cache.size(false); // size is expressed in byte
 ```
 If the first argument is true the output will be pretty printed.
-
-key-getter
-==========
-This is a utility function used to generate a function that returns a key.
-```js
-var keyGetter = require('memoize-cache/key-getter')
-var getKey = keyGetter(func);
-```
-It takes a function as argument (returning a key). But it takes care of checking if it is a valid key and to hash it.

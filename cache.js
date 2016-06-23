@@ -1,5 +1,5 @@
 var Promise = require('bluebird');
-var keyGetter = require('./key-getter');
+var keyGetter = require('memoize-cache-utils/key-getter');
 var callbackify = require('async-deco/utils/callbackify');
 var waterfall = require('async-deco/utils/waterfall');
 var snappy = require('./utils/snappy');

@@ -3,7 +3,7 @@
 Cache object
 
 */
-var keyGetter = require('./key-getter');
+var keyGetter = require('memoize-cache-utils/key-getter');
 
 function Cache(opts) {
   opts = opts || {};
