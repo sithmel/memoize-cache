@@ -1,30 +1,14 @@
-var sizeof = require('sizeof');
-var Heap = require('./heap');
+// var sizeof = require('sizeof');
+// var Heap = require('./heap');
 var keyGetter = require('memoize-cache-utils/key-getter');
-
+var LRU = require('./utils/memory-cache');
 /*
 
 Cache object
 
 */
-function sortByLessPopular(a, b) {
-  return a.times < b.times;
-}
-
-function sortByOldest(a, b) {
-  return a.expireTs < b.expireTs;
-}
-
-function byKey(key) {
-  return function (item) {
-    return item.key === key;
-  };
-}
-
 function Cache(opts) {
   opts = opts || {};
-
-  this.reset();
 
   this.getCacheKey = keyGetter(opts.key);
   this._maxAge = typeof opts.maxAge === 'undefined' ?
@@ -38,12 +22,14 @@ function Cache(opts) {
   this.serialize = opts.serialize || function (v) { return v; };
   this.deserialize = opts.deserialize || function (v) { return v; };
 
-  this._maxLen = opts.maxLen || Infinity;
+  this._maxLen = opts.maxLen;
+  this._maxSize = opts.maxSize;
+
+  this.reset();
 }
 
 Cache.prototype.push = function cache_push(args, output) {
-  var lru,
-    k = this.getCacheKey.apply(this, args),
+  var k = this.getCacheKey.apply(this, args),
     maxAge = this._maxAge.call(this, args, output) * 1000,
     maxValidity = (this._maxValidity.call(this, args, output) * 1000) + Date.now();
 
@@ -51,65 +37,18 @@ Cache.prototype.push = function cache_push(args, output) {
 
   if (!maxAge) return;
 
-  if (!(k in this._cache)) { //  not cached yet
-    if (this._LRU.size() === this._maxLen) { // prepare a place fr LRU
-      // remove from LRU heap
-      lru = this._LRU.pop();
-      // remove from cache
-      delete this._cache[lru.key];
-      // remove from stale objects cache
-      this._oldest.remove(byKey(lru.key));
-    }
-    if (this._maxLen !== Infinity) { // add to LRU
-      // add to LRU heap
-      this._LRU.push({key: k, times: 0});
-    }
-  }
-  else { // already in cache
-    this._oldest.remove(byKey(k)); // remove from
-  }
-
-  if (maxAge !== Infinity) {
-    // add to stale objects cache
-    this._oldest.push({
-      key: k,
-      expireTs: Date.now() + maxAge
-    });
-  }
-
-  // add to cache
-  this._cache[k] = { data: this.serialize(output), maxValidity: maxValidity };
+  this._cache.set(k, { data: this.serialize(output), maxValidity: maxValidity }, maxAge);
 
   return true;
-};
-
-Cache.prototype._purgeByAge = function cache__purgeByAge() {
-  // remove old entries
-  var oldest, now = Date.now();
-
-  while (this._oldest.size()) {
-    oldest = this._oldest.pop();
-    if (oldest.expireTs < now) {
-      delete this._cache[oldest.key];
-      this._LRU.remove(byKey(oldest.key));
-    }
-    else {
-      this._oldest.push(oldest);
-      break;
-    }
-  }
 };
 
 Cache.prototype.query = function cache_query(args, next) {
   var hit,
     cached = false,
-    lru,
     key,
     alreadyCalledCB = false;
 
   try {
-    this._purgeByAge(); // purge stale cache entries
-
     key = this.getCacheKey.apply(this, args);
 
     if (key === null) {
@@ -121,16 +60,8 @@ Cache.prototype.query = function cache_query(args, next) {
       });
     }
 
-    if (key in this._cache) {
-      cached = true;
-      hit = this._cache[key]; // cache hit!
-
-      if (this._maxLen !== Infinity) {
-        lru = this._LRU.remove(byKey(key));
-        lru.times++;
-        this._LRU.push(lru);
-      }
-    }
+    var hit = this._cache.get(key);
+    cached = typeof hit !== 'undefined';
   }
   catch (e) {
     if (!alreadyCalledCB) {
@@ -150,23 +81,19 @@ Cache.prototype.query = function cache_query(args, next) {
 };
 
 Cache.prototype.del = function cache_del(k) {
-  delete this._cache[k];
-  this._oldest.remove(byKey(k));
-  this._LRU.remove(byKey(k));
+  this._cache.del(k);
 };
 
 Cache.prototype.reset = function cache_reset() {
-  this._cache = {}; // key, value
-  this._LRU = new Heap(sortByLessPopular);
-  this._oldest = new Heap(sortByOldest);
+  this._cache = new LRU({ maxSize: this._maxSize, maxLen: this._maxLen });
 };
 
-Cache.prototype.size = function cache_size(pretty) {
-  return sizeof.sizeof(this._cache, pretty);
+Cache.prototype.size = function cache_size() {
+  return this._cache.size;
 };
 
 Cache.prototype.len = function cache_len() {
-  return Object.keys(this._cache).length;
+  return this._cache.len;
 };
 
 module.exports = Cache;
