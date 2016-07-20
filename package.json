@@ -36,7 +36,6 @@
     "little-ds-toolkit": "0.0.2",
     "md5-o-matic": "^0.1.1",
     "memoize-cache-utils": "^0.0.2",
-    "sizeof": "^1.0.0",
     "snappy": "^5.0.4"
   }
 }
