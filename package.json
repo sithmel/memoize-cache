@@ -1,6 +1,6 @@
 {
   "name": "memoize-cache",
-  "version": "3.2.4",
+  "version": "3.2.5",
   "description": "A cache support for memoized functions",
   "main": "index.js",
   "scripts": {
