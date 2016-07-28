@@ -1,7 +1,7 @@
 var Promise = require('bluebird');
 var keyGetter = require('memoize-cache-utils/key-getter');
 var callbackify = require('async-deco/utils/callbackify');
-var waterfall = require('async-deco/utils/waterfall');
+var waterfall = require('async-deco/callback/waterfall');
 var snappy = require('./utils/snappy');
 /*
 
@@ -19,8 +19,8 @@ function Cache(cacheManager, opts) {
   var serialize = opts.serializeAsync || (opts.serialize && callbackify(opts.serialize)) || function (v, cb) { cb(null, v); };
   var deserialize = opts.deserializeAsync || (opts.deserialize && callbackify(opts.deserialize)) || function (v, cb) { cb(null, v); };
   if (opts.compress) {
-    this.serialize = waterfall(serialize, snappy.compress);
-    this.deserialize = waterfall(snappy.decompress, deserialize);
+    this.serialize = waterfall([serialize, snappy.compress]);
+    this.deserialize = waterfall([snappy.decompress, deserialize]);
   }
   else {
     this.serialize = serialize;

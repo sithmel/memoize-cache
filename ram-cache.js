@@ -1,5 +1,3 @@
-// var sizeof = require('sizeof');
-// var Heap = require('./heap');
 var keyGetter = require('memoize-cache-utils/key-getter');
 var LRU = require('little-ds-toolkit/lib/lru-cache');
 /*

@@ -2,7 +2,7 @@ var assert = require('chai').assert;
 var Cache = require('../ram-cache');
 var lzma = require('lzma-purejs');
 
-describe.only('cache', function () {
+describe('cache', function () {
 
   it('must translate args to key', function () {
     var cache = new Cache({key: function (n) {return n;}});
