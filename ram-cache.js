@@ -37,7 +37,7 @@ Cache.prototype.push = function cache_push(args, output) {
 
   this._cache.set(k, { data: this.serialize(output), maxValidity: maxValidity }, maxAge);
 
-  return true;
+  return k;
 };
 
 Cache.prototype.query = function cache_query(args, next) {

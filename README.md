@@ -70,7 +70,8 @@ Pushing a new cached value
 cache.push(args, output);
 ```
 "args" is an array containing the arguments passed to the function that generated the output.
-This function is a "fire and forget" caching request. So there is no need of waiting for an answer. It returns "true" if the value is scheduled to be cached. Undefined if it is not (because the TTL is 0 for example).
+This function is a "fire and forget" caching request. So there is no need of waiting for an answer. It returns the "cache key" if the value is scheduled to be cached. Undefined if it is not (because the TTL is 0 for example).
+
 
 Querying for cache hit
 ----------------------

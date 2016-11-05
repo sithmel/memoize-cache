@@ -15,6 +15,13 @@ describe('cache-manager', function () {
     assert.equal(cache.getCacheKey({d:1}), 'dc6f789c90af7a7f8156af120f33e3be');
   });
 
+  it('returns the key', function () {
+    var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
+    var cache = new Cache(memoryCache);
+    var k = cache.push([], 'result');
+    assert.equal(k, '_default');
+  });
+
   it('must configure cache: default key', function (done) {
     var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
     var cache = new Cache(memoryCache);

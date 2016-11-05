@@ -28,6 +28,12 @@ describe('cache', function () {
     });
   });
 
+  it('returns the key', function () {
+    var cache = new Cache();
+    var k = cache.push([], 'result');
+    assert.equal(k, '_default');
+  });
+
   it('must push twice', function (done) {
     var cache = new Cache();
     cache.push([], 'result1');

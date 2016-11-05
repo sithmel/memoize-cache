@@ -65,7 +65,7 @@ Cache.prototype.push = function cache_push(args, output) {
     return cacheManager.setAsync(k, data, maxAge ? {ttl: maxAge} : undefined);
   });
   this._tasksToComplete.push(task);
-  return true;
+  return k;
 };
 
 Cache.prototype.query = function cache_query(args, next) {
