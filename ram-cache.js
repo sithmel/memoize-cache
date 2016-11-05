@@ -44,6 +44,8 @@ Cache.prototype.query = function cache_query(args, next) {
   var hit,
     cached = false,
     key,
+    t0 = Date.now(),
+    t1, objHit, objStale,
     alreadyCalledCB = false;
 
   try {
@@ -53,6 +55,7 @@ Cache.prototype.query = function cache_query(args, next) {
       // if k is null I don't cache
       alreadyCalledCB = true;
       return next(null, {
+        timing: Date.now() - t0,
         cached: false,
         key: key
       });
@@ -70,11 +73,15 @@ Cache.prototype.query = function cache_query(args, next) {
     }
   }
 
+  objHit = hit && this.deserialize(hit.data);
+  objStale = hit && Boolean(hit.maxValidity && hit.maxValidity < Date.now());
+
   next(null, {
     cached: cached,
+    timing: Date.now() - t0,
     key: key,
-    hit: hit && this.deserialize(hit.data),
-    stale: hit && Boolean(hit.maxValidity && hit.maxValidity < Date.now())
+    hit: objHit,
+    stale: objStale
   });
 };
 

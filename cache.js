@@ -69,6 +69,7 @@ Cache.prototype.push = function cache_push(args, output) {
 };
 
 Cache.prototype.query = function cache_query(args, next) {
+  var t0 = Date.now();
   var key = this.getCacheKey.apply(this, args);
   var that = this;
   var alreadyCalledCB = false;
@@ -77,6 +78,7 @@ Cache.prototype.query = function cache_query(args, next) {
   if (key === null) {
     // if k is null I don't cache
     return next(null, {
+      timing: Date.now() - t0,
       cached: false,
       key: key
     });
@@ -111,6 +113,7 @@ Cache.prototype.query = function cache_query(args, next) {
     var data = o.data;
     if (res) {
       obj = {
+        timing: Date.now() - t0,
         cached: true,
         key: key,
         hit: data,
@@ -122,6 +125,7 @@ Cache.prototype.query = function cache_query(args, next) {
     else {
       alreadyCalledCB = true;
       next(null, {
+        timing: Date.now() - t0,
         cached: false,
         key: key
       });

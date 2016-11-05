@@ -79,6 +79,7 @@ Querying for cache hit
 cache.query(args, function (err, result){
   // result.cached is true when you find a cached value
   // result.hit is the value cached
+  // result.timing is the time spent in ms to retrieve the value (also used for cache miss)
   // cached.key is the key used to store the value (might be useful for debugging)
   // cache.stale (true/false) depending on the maxValidity function (if defined)
 });
