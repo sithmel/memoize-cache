@@ -1,4 +1,9 @@
-var snappy = require('snappy');
+var snappy;
+try {
+  snappy = require('snappy');
+} catch (e) {
+  snappy = null;
+}
 
 var compress = function (obj, cb) {
   snappy.compress(JSON.stringify(obj), function (err, buf) {
@@ -28,5 +33,6 @@ var decompress = function (str, cb) {
 
 module.exports = {
   compress: compress,
-  decompress: decompress
+  decompress: decompress,
+  isSnappyInstalled: !!snappy,
 };

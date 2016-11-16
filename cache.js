@@ -19,6 +19,9 @@ function Cache(cacheManager, opts) {
   var serialize = opts.serializeAsync || (opts.serialize && callbackify(opts.serialize)) || function (v, cb) { cb(null, v); };
   var deserialize = opts.deserializeAsync || (opts.deserialize && callbackify(opts.deserialize)) || function (v, cb) { cb(null, v); };
   if (opts.compress) {
+    if (!snappy.isSnappyInstalled) {
+      throw new Error('The "compress" option requires the "snappy" library. Its installation failed (hint missing libraries or compiler)');
+    }
     this.serialize = waterfall([serialize, snappy.compress]);
     this.deserialize = waterfall([snappy.decompress, deserialize]);
   }
