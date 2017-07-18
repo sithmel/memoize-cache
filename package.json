@@ -35,7 +35,8 @@
     "bluebird": "^3.3.4",
     "little-ds-toolkit": "0.0.2",
     "md5-o-matic": "^0.1.1",
-    "memoize-cache-utils": "^0.0.2"
+    "memoize-cache-utils": "^0.0.2",
+    "redis": "^2.7.1"
   },
   "optionalDependencies": {
     "snappy": "^5.0.4"
