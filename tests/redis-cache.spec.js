@@ -1,24 +1,25 @@
 var assert = require('chai').assert;
 var Cache = require('../cache-redis');
 var snappy = require('snappy');
+var redis = require('redis');
 
-describe('cache-redis', function () {
+describe.only('cache-redis', function () {
 
   it('must translate args to key', function () {
-    var cache = new Cache({key: function (n) {return n;}});
+    var cache = new Cache(redis.createClient(), {key: function (n) {return n;}});
     assert.equal(cache.getCacheKey('1'), '1');
     assert.equal(cache.getCacheKey(1), 'c4ca4238a0b923820dcc509a6f75849b');
     assert.equal(cache.getCacheKey({d:1}), 'dc6f789c90af7a7f8156af120f33e3be');
   });
 
   it('returns the key', function () {
-    var cache = new Cache();
+    var cache = new Cache(redis.createClient());
     var k = cache.push([], 'result');
     assert.equal(k, '_default');
   });
 
   it('must configure cache: default key', function (done) {
-    var cache = new Cache();
+    var cache = new Cache(redis.createClient());
     cache.push([], 'result');
     cache.query({}, function (err, res) {
       assert.equal(res.cached, true);
@@ -29,7 +30,7 @@ describe('cache-redis', function () {
   });
 
   it('must push twice', function (done) {
-    var cache = new Cache();
+    var cache = new Cache(redis.createClient());
     cache.push([], 'result1');
     cache.push([], 'result2');
     cache.query({}, function (err, res) {
@@ -43,7 +44,7 @@ describe('cache-redis', function () {
 
   describe('maxValidity', function () {
     it('must use value', function (done) {
-      var cache = new Cache({ maxValidity: 0.100 });
+      var cache = new Cache(redis.createClient(), { maxValidity: 0.100 });
       cache.push([], 'result');
       cache.query({}, function (err, res) {
         assert.equal(res.cached, true);
@@ -55,7 +56,7 @@ describe('cache-redis', function () {
     });
 
     it('must use value (2)', function (done) {
-      var cache = new Cache({ maxValidity: 0.030 });
+      var cache = new Cache(redis.createClient(), { maxValidity: 0.030 });
       cache.push([], 'result');
       setTimeout(function () {
         cache.query({}, function (err, res) {
@@ -69,7 +70,7 @@ describe('cache-redis', function () {
     });
 
     it('must use func', function (done) {
-      var cache = new Cache({ maxValidity: function () {
+      var cache = new Cache(redis.createClient(), { maxValidity: function () {
         return 0.010;
       }});
       cache.push([], 'result');
@@ -87,12 +88,12 @@ describe('cache-redis', function () {
 
 
   it('must return null key', function () {
-    var cache = new Cache({ key: function (n) {return null;}});
+    var cache = new Cache(redis.createClient(), { key: function (n) {return null;}});
     assert.equal(cache.getCacheKey('1'), null);
   });
 
   it('must not cache if key is null', function (done) {
-    var cache = new Cache({ key: function (n) {return null;} });
+    var cache = new Cache(redis.createClient(), { key: function (n) {return null;} });
     cache.push([], 'result');
     cache.query({}, function (err, res) {
       assert.equal(res.cached, false);
@@ -103,7 +104,7 @@ describe('cache-redis', function () {
   });
 
   it('must not cache with specific output', function (done) {
-    var cache = new Cache({
+    var cache = new Cache(redis.createClient(), {
       key: function (n) {
         return n;
       },
@@ -127,7 +128,7 @@ describe('cache-redis', function () {
     var cache;
 
     beforeEach(function () {
-      cache = new Cache({ key: function (data) {
+      cache = new Cache(redis.createClient(), { key: function (data) {
         return data.test;
       } });
       cache.push([{test: '1'}], 'result1');
@@ -163,7 +164,7 @@ describe('cache-redis', function () {
   });
 
   it('must configure cache: string key/object', function (done) {
-    var cache = new Cache({ key: function (data) {
+    var cache = new Cache(redis.createClient(), { key: function (data) {
       return data.test;
     } });
     cache.push([{test: [1, 2]}], 'result1');
@@ -178,7 +179,7 @@ describe('cache-redis', function () {
   });
 
   it('must configure cache: array key', function (done) {
-    var cache = new Cache({ key: function (data) {
+    var cache = new Cache(redis.createClient(), { key: function (data) {
       return data.test[0];
     } });
     cache.push([{test: [1, 2]}], 'result1');
@@ -192,7 +193,7 @@ describe('cache-redis', function () {
   });
 
   it('must configure cache: array key/object', function (done) {
-    var cache = new Cache({ key: function (data) {
+    var cache = new Cache(redis.createClient(), { key: function (data) {
       return data.test;
     }});
     cache.push([{test: [1, 2]}], 'result1');
@@ -206,7 +207,7 @@ describe('cache-redis', function () {
   });
 
   it('must configure cache: func', function (done) {
-    var cache = new Cache({ key: function (config) {
+    var cache = new Cache(redis.createClient(), { key: function (config) {
       return config.test * 2;
     } });
     cache.push([{test: 4}], 'result1');
@@ -224,7 +225,7 @@ describe('cache-redis', function () {
 
     beforeEach(function () {
       // var memoryCache = cacheManager.caching({store: 'memory', max: 20, ttl: 0.030});
-      cache = new Cache({ key: function (data) {
+      cache = new Cache(redis.createClient(), { key: function (data) {
         return data.test;
       }, maxAge: 0.030 });
       cache.push([{test: '1'}], 'result1');
@@ -273,7 +274,7 @@ describe('cache-redis', function () {
 
     beforeEach(function () {
       // var memoryCache = cacheManager.caching({store: 'memory', max: 20, ttl: 0.030});
-      cache = new Cache({
+      cache = new Cache(redis.createClient(), {
         key: function (data) {
           return data.test;
         },
@@ -333,7 +334,7 @@ describe('cache-redis', function () {
       return JSON.parse(uncompressed);
     };
 
-    var cache = new Cache({ serialize: serialize, deserialize: deserialize});
+    var cache = new Cache(redis.createClient(), { serialize: serialize, deserialize: deserialize});
     cache.push([], 'result');
     cache.query({}, function (err, res) {
       assert.equal(res.cached, true);
@@ -370,7 +371,7 @@ describe('cache-redis', function () {
       });
     };
 
-    var cache = new Cache({ serializeAsync: serialize, deserializeAsync: deserialize });
+    var cache = new Cache(redis.createClient(), { serializeAsync: serialize, deserializeAsync: deserialize });
     cache.push([], 'result');
     cache.query({}, function (err, res) {
       assert.equal(res.cached, true);
@@ -381,7 +382,7 @@ describe('cache-redis', function () {
   });
 
   it('must serialize/deserialize data with snappy (use flag)', function (done) {
-    var cache = new Cache({ compress: true });
+    var cache = new Cache(redis.createClient(), { compress: true });
     cache.push([], 'result');
     cache.query({}, function (err, res) {
       assert.equal(res.cached, true);
@@ -400,7 +401,7 @@ describe('cache-redis', function () {
       return arr.join('');
     };
 
-    var cache = new Cache({ compress: true, serialize: serialize, deserialize: deserialize });
+    var cache = new Cache(redis.createClient(), { compress: true, serialize: serialize, deserialize: deserialize });
     cache.push([], 'result');
     cache.query({}, function (err, res) {
       assert.equal(res.cached, true);

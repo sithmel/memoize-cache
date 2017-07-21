@@ -2,16 +2,15 @@ var keyGetter = require('memoize-cache-utils/key-getter');
 var callbackify = require('async-deco/utils/callbackify');
 var waterfall = require('async-deco/callback/waterfall');
 var snappy = require('./utils/snappy');
-var redis = require('redis');
 /*
 
 Cache object
 
 */
 
-function Cache(opts) {
+function Cache(redisClient, opts) {
   opts = opts || {};
-  this.redisClient = redis.createClient(opts.db || {});
+  this.redisClient = redisClient;
   this.getCacheKey = keyGetter(opts.key);
   this._getMaxAge = typeof opts.maxAge !== 'function' ? function () { return opts.maxAge; } : opts.maxAge;
 
