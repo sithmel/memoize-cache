@@ -2,13 +2,22 @@ memoize-cache
 =============
 [![Build Status](https://travis-ci.org/sithmel/memoize-cache.svg?branch=master)](https://travis-ci.org/sithmel/memoize-cache)
 
-A configurable cache support for functions (https://www.npmjs.com/package/async-deco). It contains 2 different implementations.
+A configurable cache support for functions (https://www.npmjs.com/package/async-deco). It contains:
 
-* ram-cache: is a lightweight yet complete implementation of an in-ram cache. Suitable for using it in the browser
-* cache: it uses a cache manager object to store data in memory/redis/mongodb/file system (https://www.npmjs.com/package/cache-manager)
+* base-cache: a prototype implementing all the logic common between different implementations
+* cache-ram: is a lightweight yet complete implementation of an in-ram cache. Suitable for using it in the browser
+* no-cache: a mock object useful for testing caching errors.
 
+Other implementations
+=====================
+* [memoize-cache-manager](https://github.com/sithmel/memoize-cache-manager) a [cache-manager](https://github.com/BryanDonovan/node-cache-manager) adapter
+* [memoize-cache-redis](https://github.com/sithmel/memoize-cache-manager) using redis as backend
 
-ram-cache
+base-cache
+==========
+Extend this object to implement the cache with different storage/databases. The extension should include a "_set" and "_get" Use cache-ram source as reference implementation.
+
+cache-ram
 =========
 The constructor takes an option object with 3 optional attributes:
 * key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key. The value won't be cached if the function returns null
@@ -18,9 +27,11 @@ The constructor takes an option object with 3 optional attributes:
 * serialize: it is an optional function that serialize the value stored (takes a value, returns a value). It can be used for pruning part of the object we don't want to save or even using a compression algorithm
 * deserialize: it is an optional function that deserialize the value stored (takes a value, returns a value).
 
+Both serialize/deserialize can be synchronous (using return) or asynchronous (using a callback with the node convention).
+
 Example:
 ```js
-var Cache = require('memoize-cache/ram-cache'); // or require('memoize-cache').ramCache;
+var Cache = require('memoize-cache/cache-ram'); // or require('memoize-cache').CacheRAM;
 
 // no values, uses always the same key for store any value
 var cache = new Cache();
@@ -28,37 +39,9 @@ var cache = new Cache();
 // using the id property of the first argument
 // this cache will store maximum 100 items
 // every item will be considered stale and purged after 20 seconds.
-var cache = new Cache({key: function (config){
+var cache = new Cache({ key: function (config){
   return config.id;
-}}, maxLen: 100, maxAge: 20000);
-```
-
-cache
-=====
-The constructor takes an cache-manager object, and an "options" object.
-The options object may contain these attributes:
-* key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key. The value won't be cached if the function returns null
-* maxAge: it is a function that allows you to use a different TTL for a specific item (in seconds). If it returns 0 it will avoid caching the item. The function takes the same arguments as the "push" method (an array of inputs and the output). If it returns undefined, the default ttl will be used.
-* maxValidity: the maximum age of an item stored in the cache before being considered "stale" (in seconds). Default: Infinity. You can also pass a function that will calculate the validity of a specific item. The function will take the same arguments as the "push" method (an array of inputs and the output).
-* serialize: it is an optional function that serialize the value stored (takes a value, returns a value). It can be used for pruning part of the object we don't want to save or even using a compression algorithm
-* deserialize: it is an optional function that deserialize the value stored (takes a value, returns a value).
-* serializeAsync: it is an optional function that serialize the value stored, it returns using a callback. It can be used for pruning part of the object we don't want to save or even using a custom compression algorithm
-* deserializeAsync: it is an optional function that deserialize the value stored, it returns using a callback.
-* compress: if "true" will serialize/deserialize the values using the "snappy" compression algorithms (it can be used in combination with either serialize/serializeAsync steps)
-
-Example:
-```js
-var Cache = require('memoize-cache/cache'); // or require('memoize-cache').cache;
-var cacheManager = require('cache-manager'); // npm install cache-manager
-
-// using the id property of the first argument
-// this cache will store maximum 100 items
-// every item will be considered stale and purged after 20 seconds.
-var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 20});
-
-var cache = new Cache(memoryCache, function (config){
-  return config.id;
-});
+} }, maxLen: 100, maxAge: 20000);
 ```
 
 Methods
@@ -70,7 +53,11 @@ Pushing a new cached value
 cache.push(args, output);
 ```
 "args" is an array containing the arguments passed to the function that generated the output.
-This function is a "fire and forget" caching request. So there is no need of waiting for an answer. It returns the "cache key" if the value is scheduled to be cached. Undefined if it is not (because the TTL is 0 for example).
+This function is a "fire and forget" caching request. So there is no need of waiting for an answer, but if you want you can use a callback as third argument.
+It returns an object or undefined if the value won't be cached (because the TTL is 0 for example, or the resulting cachekey is null).
+This object contains:
+* key: the "cache key" if the value is scheduled to be cached
+* surrogateKeys: an array with surrogate keys. They can be used to track and delete other keys
 
 
 Querying for cache hit
@@ -94,33 +81,6 @@ var key = cache.getCacheKey(...);
 It takes as arguments the same arguments of the function. It returns the cache key.
 It uses the function passed in the factory function. If it returns a string it uses it as key. In case it is not a string it tries to serialize it to JSON and then to an hash (using md5).
 
-resetting the cache
--------------------
-This is implemented only on ram-cache. cache-manager provides an equivalent method.
-```js
-cache.reset();
-```
-
-removing a key
---------------
-This is implemented only on ram-cache. cache-manager provides an equivalent method.
-```js
-cache.del(key);
-```
-
-getting the number of item cached
----------------------------------
-This is implemented only on ram-cache.
-```js
-cache.len();
-```
-
-getting the size of the cache
------------------------------
-This is implemented only on ram-cache.
-```js
-cache.size(true);  // size is an human readable size
-
-cache.size(false); // size is expressed in byte
-```
-If the first argument is true the output will be pretty printed.
+The cache object
+----------------
+The cache object is in the "cache" property and it support the API specified here: https://github.com/sithmel/little-ds-toolkit#lru-cache
