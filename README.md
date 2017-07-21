@@ -26,8 +26,8 @@ The constructor takes an option object with 3 optional attributes:
 * maxValidity: the maximum age of the item stored in the cache (in seconds) to be considered "not stale". Default: Infinity. You can also pass a function that will calculate the validity of a specific item. The function will take the same arguments as the "push" method (an array of inputs and the output).
 * serialize: it is an optional function that serialize the value stored (takes a value, returns a value). It can be used for pruning part of the object we don't want to save or even using a compression algorithm
 * deserialize: it is an optional function that deserialize the value stored (takes a value, returns a value).
-
-Both serialize/deserialize can be synchronous (using return) or asynchronous (using a callback with the node convention).
+* serializeAsync: it is an optional function that serialize the value stored, it returns using a callback. It can be used for pruning part of the object we don't want to save or even using a custom compression algorithm
+* deserializeAsync: it is an optional function that deserialize the value stored, it returns using a callback.
 
 Example:
 ```js
