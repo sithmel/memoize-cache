@@ -1,9 +1,11 @@
-var ramCache = require('./ram-cache');
-var cache = require('./cache');
+var CacheRAM = require('./src/cache-ram');
+var NoCache = require('./src/no-cache');
+var BaseCache = require('./src/base-cache');
 var keyGetter = require('memoize-cache-utils/key-getter');
 
 module.exports = {
-  ramCache: ramCache,
-  cache: cache,
+  CacheRAM: CacheRAM,
+  NoCache: NoCache,
+  BaseCache: BaseCache,
   keyGetter: keyGetter,
 };
