@@ -1,6 +1,7 @@
 var keyGetter = require('memoize-cache-utils/key-getter');
 var keysGetter = require('memoize-cache-utils/keys-getter');
 var callbackify = require('async-deco/utils/callbackify');
+
 /*
 
 Cache object
@@ -91,6 +92,18 @@ BaseCache.prototype.query = function cache_query(args, next) {
       });
     });
   });
+};
+
+BaseCache.prototype.purgeByKeys = function cache_purgeByKeys(keys, next) {
+  throw new Error('Not implemented');
+};
+
+BaseCache.prototype.purgeByTags = function cache_purgeByTags(keys, next) {
+  throw new Error('Not implemented');
+};
+
+BaseCache.prototype.purgeAll = function cache_purgeAll(keys, next) {
+  throw new Error('Not implemented');
 };
 
 module.exports = BaseCache;

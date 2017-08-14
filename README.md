@@ -97,7 +97,7 @@ cache.purgeByKeys(keys);
 // You can pass an optional callback.
 ```
 ```js
-cache.purgeByTags(keys);
+cache.purgeByTags(tags);
 // it removes the cache item marked with a tag (string) or tags (array of strings).
 // You can pass an optional callback.
 ```
