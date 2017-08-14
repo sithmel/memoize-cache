@@ -408,7 +408,7 @@ describe('cache-ram', function () {
       cache.push(['k1', ['tag1']], 'result');
       cache.query(['k1'], function (err, value) {
         assert.equal(value.hit, 'result');
-        cache.purgeKeys('k1', function (err) {
+        cache.purgeByKeys('k1', function (err) {
           cache.query(['k1'], function (err, value) {
             assert.isFalse(value.cached);
             done();
@@ -421,7 +421,7 @@ describe('cache-ram', function () {
       cache.push(['k1', ['tag1']], 'result');
       cache.query(['k1'], function (err, value) {
         assert.equal(value.hit, 'result');
-        cache.purgeTags('tag1', function (err) {
+        cache.purgeByTags('tag1', function (err) {
           cache.query(['k1'], function (err, value) {
             assert.isFalse(value.cached);
             done();

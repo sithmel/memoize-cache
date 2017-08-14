@@ -47,7 +47,7 @@ CacheRam.prototype.purgeAll = function cache__purgeAll(next) {
   this._reset();
 };
 
-CacheRam.prototype.purgeKeys = function cache__purgeKeys(keys, next) {
+CacheRam.prototype.purgeByKeys = function cache__purgeKeys(keys, next) {
   keys = Array.isArray(keys) ? keys : [keys];
   try {
     for (var i = 0; i < keys.length; i++) {
@@ -60,14 +60,14 @@ CacheRam.prototype.purgeKeys = function cache__purgeKeys(keys, next) {
   }
 };
 
-CacheRam.prototype.purgeTags = function cache__purgeTags(tags, next) {
+CacheRam.prototype.purgeByTags = function cache__purgeTags(tags, next) {
   tags = Array.isArray(tags) ? tags : [tags];
   var keys;
   try {
     for (var i = 0; i < tags.length; i++) {
       keys = this.tags.getKeys(tags[i]);
-      this.purgeKeys(keys);
-      this.tags.removeTag(tags[i]);
+      this.purgeByKeys(keys);
+      // not calling this.tags.removeTag(tags[i]); as this.tags.removeKey(keys[i]) should suffice
     }
     next();
   } catch (e) {
