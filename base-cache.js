@@ -1,4 +1,5 @@
 var keyGetter = require('memoize-cache-utils/key-getter');
+var keysGetter = require('memoize-cache-utils/keys-getter');
 var callbackify = require('async-deco/utils/callbackify');
 /*
 
@@ -9,6 +10,7 @@ Cache object
 function BaseCache(opts) {
   this.opts = opts = opts || {};
   this.getCacheKey = keyGetter(opts.key);
+  this.getTags = keysGetter(opts.tags);
   this.getMaxAge = typeof opts.maxAge !== 'function' ? function () { return opts.maxAge; } : opts.maxAge;
 
   this.serialize = opts.serializeAsync || (opts.serialize && callbackify(opts.serialize)) || function (v, cb) { cb(null, v); };
@@ -22,9 +24,11 @@ function BaseCache(opts) {
 BaseCache.prototype.push = function cache_push(args, output, next) {
   next = next || function () {}; // next is optional
   var serialize = this.serialize;
-  var k = this.getCacheKey.apply(this, args);
-  var maxAge = this.getMaxAge.call(this, args, output); // undefined === forever
   var set = this._set.bind(this);
+
+  var k = this.getCacheKey.apply(this, args);
+  var tags = this.getTags.apply(this, args);
+  var maxAge = this.getMaxAge.call(this, args, output); // undefined === forever
   var maxValidity = (this.maxValidity.call(this, args, output) * 1000) + Date.now();
 
   if (k === null || maxAge === 0) {
@@ -32,15 +36,16 @@ BaseCache.prototype.push = function cache_push(args, output, next) {
     return;
   }
 
+  var keys = { key: k, tags: tags };
   serialize(output, function (err, data) {
     var jsonData, payload;
     if (err) {
       return next(err);
     }
     payload = { data: data, maxValidity: maxValidity };
-    set(k, payload, maxAge, next);
+    set(keys, payload, maxAge, next);
   });
-  return { key: k };
+  return keys;
 };
 
 BaseCache.prototype.query = function cache_query(args, next) {
