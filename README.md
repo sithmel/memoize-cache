@@ -21,6 +21,7 @@ cache-ram
 =========
 The constructor takes an option object with 3 optional attributes:
 * key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key. The value won't be cached if the function returns null
+* tags: a function that returns an array of tags (strings). You can use that for purging a set of items from the cache.
 * maxLen: the maximum number of items stored in the cache. Default: Infinity. Cache items will be purged using an LRU algorithm
 * maxAge: the maximum age of the item stored in the cache (in seconds). Default: Infinity. You can also pass a function that will calculate the ttl of a specific item (0 will mean no cache). The function will take the same arguments as the "push" method (an array of inputs and the output).
 * maxValidity: the maximum age of the item stored in the cache (in seconds) to be considered "not stale". Default: Infinity. You can also pass a function that will calculate the validity of a specific item. The function will take the same arguments as the "push" method (an array of inputs and the output).
@@ -57,8 +58,7 @@ This function is a "fire and forget" caching request. So there is no need of wai
 It returns an object or undefined if the value won't be cached (because the TTL is 0 for example, or the resulting cachekey is null).
 This object contains:
 * key: the "cache key" if the value is scheduled to be cached
-* surrogateKeys: an array with surrogate keys. They can be used to track and delete other keys
-
+* tags: an array with tags. They can be used to track and delete other keys
 
 Querying for cache hit
 ----------------------
@@ -84,3 +84,20 @@ It uses the function passed in the factory function. If it returns a string it u
 The cache object
 ----------------
 The cache object is in the "cache" property and it support the API specified here: https://github.com/sithmel/little-ds-toolkit#lru-cache
+
+Purge cache items
+-----------------
+There are 3 methods available:
+```js
+cache.purgeAll(); // it removes the whole cache (you can pass an optional callback)
+```
+```js
+cache.purgeByKeys(keys);
+// it removes the cache item with a specific key (string) or keys (array of strings).
+// You can pass an optional callback.
+```
+```js
+cache.purgeByTags(tags);
+// it removes the cache item marked with a tag (string) or tags (array of strings).
+// You can pass an optional callback.
+```

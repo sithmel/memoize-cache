@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "async-deco": "^7.6.0",
-    "little-ds-toolkit": "0.0.2",
-    "memoize-cache-utils": "^0.0.2"
+    "little-ds-toolkit": "0.4.0",
+    "memoize-cache-utils": "^0.1.1"
   }
 }

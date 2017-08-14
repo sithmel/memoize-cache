@@ -390,4 +390,45 @@ describe('cache-ram', function () {
       done();
     });
   });
+
+
+  describe('tags', function () {
+    var cache;
+    beforeEach(function () {
+      var getKey = function (key, tags) {
+        return key;
+      };
+      var getTags = function (key, tags) {
+        return tags;
+      };
+      cache = new Cache({ key: getKey, tags: getTags, maxLen: 1 });
+    });
+
+    it('removes a key', function (done) {
+      cache.push(['k1', ['tag1']], 'result');
+      cache.query(['k1'], function (err, value) {
+        assert.equal(value.hit, 'result');
+        cache.purgeByKeys('k1', function (err) {
+          cache.query(['k1'], function (err, value) {
+            assert.isFalse(value.cached);
+            done();
+          });
+        });
+      });
+    });
+
+    it('removes a tag', function (done) {
+      cache.push(['k1', ['tag1']], 'result');
+      cache.query(['k1'], function (err, value) {
+        assert.equal(value.hit, 'result');
+        cache.purgeByTags('tag1', function (err) {
+          cache.query(['k1'], function (err, value) {
+            assert.isFalse(value.cached);
+            done();
+          });
+        });
+      });
+    });
+
+  });
 });
