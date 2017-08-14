@@ -44,10 +44,17 @@ CacheRam.prototype._get = function cache__get(key, next) {
 };
 
 CacheRam.prototype.purgeAll = function cache__purgeAll(next) {
-  this._reset();
+  next = next || function () {};
+  try {
+    this._reset();
+  } catch (e) {
+    return next(e);
+  }
+  next();
 };
 
 CacheRam.prototype.purgeByKeys = function cache__purgeKeys(keys, next) {
+  next = next || function () {};
   keys = Array.isArray(keys) ? keys : [keys];
   try {
     for (var i = 0; i < keys.length; i++) {
@@ -61,6 +68,7 @@ CacheRam.prototype.purgeByKeys = function cache__purgeKeys(keys, next) {
 };
 
 CacheRam.prototype.purgeByTags = function cache__purgeTags(tags, next) {
+  next = next || function () {};
   tags = Array.isArray(tags) ? tags : [tags];
   var keys;
   try {

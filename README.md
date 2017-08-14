@@ -87,3 +87,17 @@ The cache object is in the "cache" property and it support the API specified her
 
 Purge cache items
 -----------------
+There are 3 methods available:
+```js
+cache.purgeAll(); // it removes the whole cache (you can pass an optional callback)
+```
+```js
+cache.purgeByKeys(keys);
+// it removes the cache item with a specific key (string) or keys (array of strings).
+// You can pass an optional callback.
+```
+```js
+cache.purgeByTags(keys);
+// it removes the cache item marked with a tag (string) or tags (array of strings).
+// You can pass an optional callback.
+```
