@@ -15,7 +15,7 @@ Other implementations
 
 base-cache
 ==========
-Extend this object to implement the cache with different storage/databases. The extension should include a "_set" and "_get" Use cache-ram source as reference implementation.
+Extend this object to implement the cache with different storage/databases. The extension should include at least "_set" and "_get" Use cache-ram source as reference implementation.
 
 cache-ram
 =========
@@ -85,8 +85,8 @@ The cache object
 ----------------
 The cache object is in the "cache" property and it support the API specified here: https://github.com/sithmel/little-ds-toolkit#lru-cache
 
-Purge cache items
------------------
+Purging cache items
+-------------------
 There are 3 methods available:
 ```js
 cache.purgeAll(); // it removes the whole cache (you can pass an optional callback)
