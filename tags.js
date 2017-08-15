@@ -46,42 +46,32 @@ Tags.prototype.add = function (key, tags) {
 };
 
 Tags.prototype.getTags = function (key) {
-  if (key in this.keysToTags) {
-    return this.keysToTags[key].toArray();
-  }
+  return key in this.keysToTags ? this.keysToTags[key].toArray() : [];
 };
 
 Tags.prototype.getKeys = function (tag) {
-  if (tag in this.tagsToKeys) {
-    return this.tagsToKeys[tag].toArray();
-  }
+  return tag in this.tagsToKeys ? this.tagsToKeys[tag].toArray() : [];
 };
 
 Tags.prototype.removeKey = function (key) {
-  if (!(key in this.keysToTags)) return;
-
-  var tags = this.keysToTags[key].toArray();
+  var tags = this.getTags(key);
   for (var i = 0; i < tags.length; i++) {
     this.tagsToKeys[tags[i]].del(key);
     if (this.tagsToKeys[tags[i]].len === 0) {
       delete this.tagsToKeys[tags[i]];
     }
   }
-
   delete this.keysToTags[key];
 };
 
 Tags.prototype.removeTag = function (tag) {
-  if (!(tag in this.tagsToKeys)) return;
-
-  var keys = this.tagsToKeys[tag].toArray();
+  var keys = this.getKeys(tag);
   for (var i = 0; i < keys.length; i++) {
     this.keysToTags[keys[i]].del(tag);
     if (this.keysToTags[keys[i]].len === 0) {
       delete this.keysToTags[keys[i]];
     }
   }
-
   delete this.tagsToKeys[tag];
 };
 

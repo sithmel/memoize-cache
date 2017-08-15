@@ -45,13 +45,13 @@ describe('tags', function () {
     assert.ok(tags.keysToTags['key1']);
     assert.isUndefined(tags.keysToTags['key2']);
     assert.deepEqual(tags.getTags('key1'), ['1', '2']);
-    assert.isUndefined(tags.getTags('key2'));
+    assert.deepEqual(tags.getTags('key2'), []);
     assert.ok(tags.tagsToKeys['1']);
     assert.ok(tags.tagsToKeys['2']);
     assert.isUndefined(tags.tagsToKeys['3']);
     assert.deepEqual(tags.getKeys('1'), ['key1']);
     assert.deepEqual(tags.getKeys('2'), ['key1']);
-    assert.isUndefined(tags.getKeys('3'));
+    assert.deepEqual(tags.getKeys('3'), []);
   });
 
   it('must remove a tag', function () {
@@ -66,7 +66,7 @@ describe('tags', function () {
     assert.isUndefined(tags.tagsToKeys['1']);
     assert.ok(tags.tagsToKeys['2']);
     assert.ok(tags.tagsToKeys['3']);
-    assert.isUndefined(tags.getKeys('1'));
+    assert.deepEqual(tags.getKeys('1'), []);
     assert.deepEqual(tags.getKeys('2'), ['key1']);
     assert.deepEqual(tags.getKeys('3'), ['key2']);
   });
