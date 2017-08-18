@@ -53,12 +53,26 @@ Pushing a new cached value
 ```js
 cache.push(args, output);
 ```
+This function signature is designed to simplify caching of a function call. So it takes the arguments used for the call and the output.
 "args" is an array containing the arguments passed to the function that generated the output.
 This function is a "fire and forget" caching request. So there is no need of waiting for an answer, but if you want you can use a callback as third argument.
 It returns an object or undefined if the value won't be cached (because the TTL is 0 for example, or the resulting cachekey is null).
 This object contains:
 * key: the "cache key" if the value is scheduled to be cached
 * tags: an array with tags. They can be used to track and delete other keys
+
+Pushing a new cached value (2)
+------------------------------
+This function caches a value. It is as back door to push data in the cache.
+```js
+cache.set(keys, maxValidity, maxAge, data, next);
+```
+
+* keys is an object: { key: 'thisisthekey', tags: ['tag1', 'tag2'] }
+* maxValidity is a timestamp for considering the data stale. For example: 10000 + Date.now(). Ten second from now.
+* maxAge: after this number of milliseconds the data will be removed from the cache
+* data: the data to cache. Not serialised
+* next: optional callback
 
 Querying for cache hit
 ----------------------

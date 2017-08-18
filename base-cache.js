@@ -24,8 +24,6 @@ function BaseCache(opts) {
 
 BaseCache.prototype.push = function cache_push(args, output, next) {
   next = next || function () {}; // next is optional
-  var serialize = this.serialize;
-  var set = this._set.bind(this);
 
   var k = this.getCacheKey.apply(this, args);
   var tags = this.getTags.apply(this, args);
@@ -38,6 +36,16 @@ BaseCache.prototype.push = function cache_push(args, output, next) {
   }
 
   var keys = { key: k, tags: tags };
+  this.set(keys, maxValidity, maxAge, output, next);
+  return keys;
+};
+
+BaseCache.prototype.set = function cache_set(keys, maxValidity, maxAge, output, next) {
+  next = next || function () {}; // next is optional
+
+  var set = this._set.bind(this);
+  var serialize = this.serialize;
+
   serialize(output, function (err, data) {
     var jsonData, payload;
     if (err) {
@@ -46,7 +54,6 @@ BaseCache.prototype.push = function cache_push(args, output, next) {
     payload = { data: data, maxValidity: maxValidity };
     set(keys, payload, maxAge, next);
   });
-  return keys;
 };
 
 BaseCache.prototype.query = function cache_query(args, next) {
