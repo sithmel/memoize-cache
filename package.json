@@ -30,7 +30,6 @@
     "mocha": "^5.2.0"
   },
   "dependencies": {
-    "little-ds-toolkit": "0.4.0",
-    "memoize-cache-utils": "^0.1.1"
+    "little-ds-toolkit": "^1.1.0"
   }
 }

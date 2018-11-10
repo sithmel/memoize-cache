@@ -1,78 +1,56 @@
-function Bucket (arr) {
-  arr = arr || []
-  this.data = {}
-  this.len = 0
-  for (var i = 0, len = arr.length; i < len; i++) {
-    this.add(arr[i])
-  }
-};
+var utils = require('./utils')
 
-Bucket.prototype.has = function (key) {
-  return key in this.data
-}
+var getSet = utils.getSet
+var getMap = utils.getMap
+var setToArray = utils.setToArray
 
-Bucket.prototype.add = function (key) {
-  this.len++
-  this.data[key] = true
-}
-
-Bucket.prototype.del = function (key) {
-  if (this.has(key)) {
-    delete this.data[key]
-    this.len--
-  }
-}
-
-Bucket.prototype.toArray = function () {
-  return Object.keys(this.data)
-}
-
-function Tags () {
-  this.keysToTags = {}
-  this.tagsToKeys = {}
+function Tags (forceLegacy) {
+  this.forceLegacy = forceLegacy
+  this.keysToTags = getMap(forceLegacy)
+  this.tagsToKeys = getMap(forceLegacy)
 }
 
 Tags.prototype.add = function (key, tags) {
   tags = tags || []
   var tag
-  this.keysToTags[key] = new Bucket(tags)
+  this.keysToTags.set(key, getSet(tags, this.forceLegacy))
   for (var i = 0; i < tags.length; i++) {
     tag = tags[i]
-    if (!(tag in this.tagsToKeys)) {
-      this.tagsToKeys[tag] = new Bucket()
+    if (!this.tagsToKeys.has(tag)) {
+      this.tagsToKeys.set(tag, getSet(undefined, this.forceLegacy))
     }
-    this.tagsToKeys[tag].add(key)
+    this.tagsToKeys.get(tag).add(key)
   }
 }
 
 Tags.prototype.getTags = function (key) {
-  return key in this.keysToTags ? this.keysToTags[key].toArray() : []
+  return this.keysToTags.has(key) ? setToArray(this.keysToTags.get(key)) : []
 }
 
 Tags.prototype.getKeys = function (tag) {
-  return tag in this.tagsToKeys ? this.tagsToKeys[tag].toArray() : []
+  return this.tagsToKeys.has(tag) ? setToArray(this.tagsToKeys.get(tag)) : []
 }
 
 Tags.prototype.removeKey = function (key) {
   var tags = this.getTags(key)
   for (var i = 0; i < tags.length; i++) {
-    this.tagsToKeys[tags[i]].del(key)
-    if (this.tagsToKeys[tags[i]].len === 0) {
-      delete this.tagsToKeys[tags[i]]
+    this.tagsToKeys.get(tags[i]).delete(key)
+    if (this.tagsToKeys.get(tags[i]).size === 0) {
+      this.tagsToKeys.delete(tags[i])
     }
   }
-  delete this.keysToTags[key]
+  this.keysToTags.delete(key)
 }
 
 Tags.prototype.removeTag = function (tag) {
   var keys = this.getKeys(tag)
   for (var i = 0; i < keys.length; i++) {
-    this.keysToTags[keys[i]].del(tag)
-    if (this.keysToTags[keys[i]].len === 0) {
-      delete this.keysToTags[keys[i]]
+    this.keysToTags.get(keys[i]).delete(tag)
+    if (this.keysToTags.get(keys[i]).size === 0) {
+      this.keysToTags.delete(keys[i])
     }
   }
-  delete this.tagsToKeys[tag]
+  this.tagsToKeys.delete(tag)
 }
 
 module.exports = Tags

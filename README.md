@@ -20,15 +20,13 @@ Extend this object to implement the cache with different storage/databases. The 
 cache-ram
 =========
 The constructor takes an option object with 3 optional attributes:
-* key: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned should be a string or it will be converted to JSON and then md5. Default: a function returning a fixed key. The value won't be cached if the function returns null
-* tags: a function that returns an array of tags (strings). You can use that for purging a set of items from the cache.
+* getKey: a function used to extract the cache key (used in the push and query method for storing, retrieving the cached value). The key returned can be any value (when using cache-ram and ES2015 maps and sets are supported). Default: a function returning a fixed key. The value won't be cached if the function returns null.
+* getTags: a function that returns an array of tags (strings). You can use that for purging a set of items from the cache.
 * maxLen: the maximum number of items stored in the cache. Default: Infinity. Cache items will be purged using an LRU algorithm
 * maxAge: the maximum age of the item stored in the cache (in seconds). Default: Infinity. You can also pass a function that will calculate the ttl of a specific item (0 will mean no cache). The function will take the same arguments as the "push" method (an array of inputs and the output).
 * maxValidity: the maximum age of the item stored in the cache (in seconds) to be considered "not stale". Default: Infinity. You can also pass a function that will calculate the validity of a specific item. The function will take the same arguments as the "push" method (an array of inputs and the output).
 * serialize: it is an optional function that serialize the value stored (takes a value, returns a value). It can be used for pruning part of the object we don't want to save or even using a compression algorithm
 * deserialize: it is an optional function that deserialize the value stored (takes a value, returns a value).
-* serializeAsync: it is an optional function that serialize the value stored, it returns using a callback. It can be used for pruning part of the object we don't want to save or even using a custom compression algorithm
-* deserializeAsync: it is an optional function that deserialize the value stored, it returns using a callback.
 
 Example:
 ```js
@@ -40,7 +38,7 @@ var cache = new Cache();
 // using the id property of the first argument
 // this cache will store maximum 100 items
 // every item will be considered stale and purged after 20 seconds.
-var cache = new Cache({ key: function (config){
+var cache = new Cache({ getKey: function (config){
   return config.id;
 } }, maxLen: 100, maxAge: 20000);
 ```
@@ -93,7 +91,7 @@ Getting the cache key
 var key = cache.getCacheKey(...);
 ```
 It takes as arguments the same arguments of the function. It returns the cache key.
-It uses the function passed in the factory function. If it returns a string it uses it as key. In case it is not a string it tries to serialize it to JSON and then to an hash (using md5).
+It uses the function passed in the factory function.
 
 The cache object
 ----------------

@@ -4,15 +4,8 @@ var Cache = require('../cache-ram')
 var lzma = require('lzma-purejs')
 
 describe('cache-ram', function () {
-  it('must translate args to key', function () {
-    var cache = new Cache({ key: function (n) { return n } })
-    assert.equal(cache.getCacheKey('1'), '1')
-    assert.equal(cache.getCacheKey(1), 'c4ca4238a0b923820dcc509a6f75849b')
-    assert.equal(cache.getCacheKey({ d: 1 }), 'dc6f789c90af7a7f8156af120f33e3be')
-  })
-
   it('must return null key', function () {
-    var cache = new Cache({ key: function (n) { return null } })
+    var cache = new Cache({ getKey: function (n) { return null } })
     assert.equal(cache.getCacheKey('1'), null)
   })
 
@@ -97,7 +90,7 @@ describe('cache-ram', function () {
   })
 
   it('must not cache if key is null', function (done) {
-    var cache = new Cache({ key: function (n) { return null } })
+    var cache = new Cache({ getKey: function (n) { return null } })
     cache.push([], 'result')
     cache.query({}, function (err, res) {
       if (err) return done(err)
@@ -110,7 +103,7 @@ describe('cache-ram', function () {
 
   it('must not cache with specific output', function (done) {
     var cache = new Cache({
-      key: function (n) {
+      getKey: function (n) {
         return n
       },
       maxAge: function (args, output) {
@@ -135,7 +128,7 @@ describe('cache-ram', function () {
     var cache
 
     beforeEach(function () {
-      cache = new Cache({ key: function (data) {
+      cache = new Cache({ getKey: function (data) {
         return data.test
       } })
       cache.push([{ test: '1' }], 'result1')
@@ -176,24 +169,26 @@ describe('cache-ram', function () {
   })
 
   it('must configure cache: string key/object', function (done) {
-    var cache = new Cache({ key: function (data) {
+    var cache = new Cache({ getKey: function (data) {
       return data.test
     } })
-    cache.push([{ test: [1, 2] }], 'result1')
-    cache.push([{ test: [3, 4] }], 'result2')
+    var array1 = [1, 2]
+    var array2 = [3, 4]
+    cache.push([{ test: array1 }], 'result1')
+    cache.push([{ test: array2 }], 'result2')
 
-    cache.query([{ test: [1, 2] }], function (err, res1) {
+    cache.query([{ test: array1 }], function (err, res1) {
       if (err) return done(err)
       assert.equal(res1.cached, true)
       assert.equal(res1.stale, false)
-      assert.equal(res1.key, 'f79408e5ca998cd53faf44af31e6eb45')
+      assert.equal(res1.key, array1)
       assert.equal(res1.hit, 'result1')
       done()
     })
   })
 
   it('must configure cache: array key', function (done) {
-    var cache = new Cache({ key: function (data) {
+    var cache = new Cache({ getKey: function (data) {
       return data.test[0]
     } })
     cache.push([{ test: [1, 2] }], 'result1')
@@ -202,29 +197,30 @@ describe('cache-ram', function () {
       if (err) return done(err)
       assert.equal(res1.cached, true)
       assert.equal(res1.stale, false)
-      assert.equal(res1.key, 'c4ca4238a0b923820dcc509a6f75849b')
+      assert.equal(res1.key, 1)
       assert.equal(res1.hit, 'result1')
       done()
     })
   })
 
   it('must configure cache: array key/object', function (done) {
-    var cache = new Cache({ key: function (data) {
+    var cache = new Cache({ getKey: function (data) {
       return data.test
     } })
-    cache.push([{ test: [1, 2] }], 'result1')
+    var array1 = [1, 2]
+    cache.push([{ test: array1 }], 'result1')
 
-    cache.query([{ test: [1, 2] }], function (err, res1) {
+    cache.query([{ test: array1 }], function (err, res1) {
       if (err) return done(err)
       assert.equal(res1.cached, true)
-      assert.equal(res1.key, 'f79408e5ca998cd53faf44af31e6eb45')
+      assert.equal(res1.key, array1)
       assert.equal(res1.hit, 'result1')
       done()
     })
   })
 
   it('must configure cache: func', function (done) {
-    var cache = new Cache({ key: function (config) {
+    var cache = new Cache({ getKey: function (config) {
       return config.test * 2
     } })
     cache.push([{ test: 4 }], 'result1')
@@ -232,7 +228,7 @@ describe('cache-ram', function () {
     cache.query([{ test: 4 }], function (err, res1) {
       if (err) return done(err)
       assert.equal(res1.cached, true)
-      assert.equal(res1.key, 'c9f0f895fb98ab9159f51fd0297e236d')
+      assert.equal(res1.key, 8)
       assert.equal(res1.hit, 'result1')
       done()
     })
@@ -242,7 +238,7 @@ describe('cache-ram', function () {
     var cache
 
     beforeEach(function () {
-      cache = new Cache({ key: function (data) {
+      cache = new Cache({ getKey: function (data) {
         return data.test
       },
       maxLen: 2 })
@@ -292,7 +288,7 @@ describe('cache-ram', function () {
     var cache
 
     beforeEach(function () {
-      cache = new Cache({ key: function (data) {
+      cache = new Cache({ getKey: function (data) {
         return data.test
       },
       maxAge: 0.030 })
@@ -346,7 +342,7 @@ describe('cache-ram', function () {
 
     beforeEach(function () {
       cache = new Cache({
-        key: function (data) {
+        getKey: function (data) {
           return data.test
         },
         maxAge: function (args, output) {
@@ -426,7 +422,7 @@ describe('cache-ram', function () {
       var getTags = function (key, tags) {
         return tags
       }
-      cache = new Cache({ key: getKey, tags: getTags, maxLen: 1 })
+      cache = new Cache({ getKey: getKey, getTags: getTags, maxLen: 1 })
     })
 
     it('removes a key', function (done) {

@@ -1,20 +1,3 @@
-var keyGetter = require('memoize-cache-utils/key-getter')
-var keysGetter = require('memoize-cache-utils/keys-getter')
-
-function callbackify (func) {
-  return function _callbackify () {
-    // get arguments
-    var context = this
-    var args = Array.prototype.slice.call(arguments, 0, -1)
-    var cb = arguments[arguments.length - 1]
-    try {
-      var output = func.apply(context, args)
-    } catch (e) {
-      return cb(e)
-    }
-    cb(null, output)
-  }
-}
 /*
 
 Cache object
@@ -23,12 +6,12 @@ Cache object
 
 function BaseCache (opts) {
   this.opts = opts = opts || {}
-  this.getCacheKey = keyGetter(opts.key)
-  this.getTags = keysGetter(opts.tags)
+  this.getCacheKey = opts.getKey || function () { return '_default' }
+  this.getTags = opts.getTags || function () { return [] }
   this.getMaxAge = typeof opts.maxAge !== 'function' ? function () { return opts.maxAge } : opts.maxAge
 
-  this.serialize = opts.serializeAsync || (opts.serialize && callbackify(opts.serialize)) || function (v, cb) { cb(null, v) }
-  this.deserialize = opts.deserializeAsync || (opts.deserialize && callbackify(opts.deserialize)) || function (v, cb) { cb(null, v) }
+  this.serialize = opts.serialize || function (v) { return v }
+  this.deserialize = opts.deserialize || function (v) { return v }
 
   this.maxValidity = typeof opts.maxValidity === 'undefined'
     ? function () { return Infinity }
@@ -49,24 +32,18 @@ BaseCache.prototype.push = function cachePush (args, output, next) {
   }
 
   var keys = { key: k, tags: tags }
+
   this.set(keys, maxValidity, maxAge, output, next)
   return keys
 }
 
 BaseCache.prototype.set = function cacheSet (keys, maxValidity, maxAge, output, next) {
   next = next || function () {} // next is optional
+  var payload
 
   var set = this._set.bind(this)
-  var serialize = this.serialize
-
-  serialize(output, function (err, data) {
-    var payload
-    if (err) {
-      return next(err)
-    }
-    payload = { data: data, maxValidity: maxValidity }
-    set(keys, payload, maxAge, next)
-  })
+  payload = { data: this.serialize(output), maxValidity: maxValidity }
+  set(keys, payload, maxAge, next)
 }
 
 BaseCache.prototype.query = function cacheQuery (args, next) {
@@ -98,17 +75,12 @@ BaseCache.prototype.query = function cacheQuery (args, next) {
     }
     maxValidity = payload.maxValidity
     data = payload.data
-    deserialize(data, function (err, output) {
-      if (err) {
-        return next(err)
-      }
-      next(null, {
-        timing: Date.now() - t0,
-        cached: true,
-        key: key,
-        hit: output,
-        stale: Boolean(maxValidity && maxValidity < Date.now())
-      })
+    next(null, {
+      timing: Date.now() - t0,
+      cached: true,
+      key: key,
+      hit: deserialize(data),
+      stale: Boolean(maxValidity && maxValidity < Date.now())
     })
   })
 }
