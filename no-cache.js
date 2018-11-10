@@ -3,11 +3,10 @@
 Cache object
 
 */
-var keyGetter = require('memoize-cache-utils/key-getter')
 
 function Cache (opts) {
   opts = opts || {}
-  this.getCacheKey = keyGetter(opts.key)
+  this.getCacheKey = opts.key || function () { return '_default' }
 }
 
 Cache.prototype.push = function cachePush (args, output) {}
